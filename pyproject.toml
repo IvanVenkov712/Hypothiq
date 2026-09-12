@@ -1,0 +1,6 @@
+[project]
+name = "hypothiq"
+version = "0.1.0"
+dependencies = [
+    "nautilus_trader==2.0.0rc4",
+]
