@@ -1,0 +1,43 @@
+from datetime import datetime
+
+import backtrader as bt
+import pandas as pd
+
+from precoded_strategies.single_asset.ma_cross import MACrossOver
+from precoded_strategies.single_asset.mean_reversion import MeanReversion
+
+df = pd.read_csv("../../data/AAPL.csv")
+
+df["Date"] = pd.to_datetime(df["Date"])
+df.set_index("Date", inplace=True)
+
+data = bt.feeds.PandasData(
+    dataname=df,
+    open="Open",
+    high="High",
+    low="Low",
+    close="Close",
+    volume="Volume",
+    openinterest=None,
+    fromdate=datetime(2021, 1, 1),
+    todate=datetime(2026, 1, 1)
+)
+
+cerebro = bt.Cerebro()
+cerebro.adddata(data)
+cerebro.addstrategy(MeanReversion)
+
+cerebro.addanalyzer(bt.analyzers.AnnualReturn)
+cerebro.addanalyzer(bt.analyzers.SharpeRatio)
+cerebro.addanalyzer(bt.analyzers.DrawDown, _name="drawdown")
+
+strats = cerebro.run()
+strat = strats[0]
+
+print(strat.analyzers.drawdown.get_analysis().max.drawdown)
+
+for analyzer in strat.analyzers:
+    print(analyzer.get_analysis())
+
+
+
