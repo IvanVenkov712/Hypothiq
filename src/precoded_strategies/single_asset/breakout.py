@@ -19,7 +19,7 @@ class DonchianBreakout(bt.Strategy):
         elif self.data.close[0] < self.min[0]:
             self.close()
 
-class BollingerBandsBreakout(bt.Strategy):
+class SimpleBollingerBandsBreakout(bt.Strategy):
     params = dict(
         period=20,
         devfactor=2,

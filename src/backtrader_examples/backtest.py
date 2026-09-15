@@ -4,7 +4,7 @@ from datetime import datetime
 import backtrader as bt
 import pandas as pd
 
-from precoded_strategies.single_asset.breakout import DonchianBreakout, BollingerBandsBreakout
+from precoded_strategies.single_asset.breakout import DonchianBreakout, SimpleBollingerBandsBreakout
 from precoded_strategies.single_asset.buy_and_hold import BuyAndHold
 from precoded_strategies.single_asset.ma_cross import MACrossOver
 from precoded_strategies.single_asset.mean_reversion import MeanReversion
@@ -29,7 +29,7 @@ data = bt.feeds.PandasData(
 
 cerebro = bt.Cerebro()
 cerebro.adddata(data)
-cerebro.addstrategy(BollingerBandsBreakout)
+cerebro.addstrategy(SimpleBollingerBandsBreakout)
 
 cerebro.addanalyzer(bt.analyzers.AnnualReturn)
 cerebro.addanalyzer(bt.analyzers.SharpeRatio)
