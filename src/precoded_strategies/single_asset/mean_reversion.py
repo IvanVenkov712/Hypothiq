@@ -3,7 +3,7 @@ import backtrader.indicators as btind
 
 class MeanReversion(bt.Strategy):
     params = dict(
-        multiplier=0.99,
+        multiplier=0.95,
         period=20,
         movav=btind.MovingAverageSimple
     )
@@ -12,8 +12,9 @@ class MeanReversion(bt.Strategy):
         self.ma = self.p.movav(period=self.p.period)
 
     def next(self):
-        if self.data.close < self.ma * self.p.multiplier:
+        if not self.position:
+            if self.data.close < self.ma * self.p.multiplier:
                 self.buy()
 
-        elif self.position and self.data.close >= self.ma:
+        elif self.data.close >= self.ma:
             self.close()
