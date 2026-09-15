@@ -304,6 +304,7 @@ def main():
     cerebro.broker.set_coo(False)
     cerebro.addanalyzer(bt.analyzers.DrawDown, _name="drawdown")
     cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="trades")
+    cerebro.addanalyzer(bt.analyzers.SharpeRatio, _name="sharpe")
     strategy = cerebro.run()[0]
 
     final_value = cerebro.broker.getvalue()
@@ -311,6 +312,7 @@ def main():
     closed = trades.get("total", {}).get("closed", 0)
     print(f"Final marked-to-market equity: {final_value:.2f}")
     print(f"Total return: {100 * (final_value / args.cash - 1):.2f}%")
+    print(f"Sharpe ratio: {strategy.analyzers.sharpe.get_analysis()['sharperatio']}")
     print(f"Maximum drawdown: {strategy.analyzers.drawdown.get_analysis().max.drawdown:.2f}%")
     print(f"Closed trades: {closed}; open position: {strategy.position.size}")
     print(f"Pending order at end: {strategy.order is not None}")
