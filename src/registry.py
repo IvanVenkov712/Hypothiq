@@ -1,5 +1,3 @@
-STRATEGIES =
-
 def strategy_by_name(name: str):
     pass
 
