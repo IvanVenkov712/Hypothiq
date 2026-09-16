@@ -56,8 +56,9 @@ def run_backtest_single_asset(
         'start_cash': cash,
         'end_cash': cerebro.broker.cash,
         'end_value': cerebro.broker.get_value(),
-        'returns': strat.analyzers['returns'].get_analysis(),
-        'sharpe': strat.analyzers['sharpe'].get_analysis(),
-        'trades': strat.analyzers['trades'].get_analysis(),
-        'drawdown': strat.analyzers['drawdown'].get_analysis(),
+        'total_return': 100 * (cerebro.broker.getvalue() / cash - 1),
+        'CAGR': strat.analyzers['returns'].get_analysis().rnorm,
+        'sharpe': strat.analyzers['sharpe'].get_analysis()['sharperatio'],
+        'closed_trades': strat.analyzers['trades'].get_analysis(),
+        'max_drawdown': strat.analyzers['drawdown'].get_analysis().max.drawdown,
     }
