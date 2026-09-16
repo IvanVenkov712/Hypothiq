@@ -1,51 +1,107 @@
 # AGENTS.md
 
 ## Project description
-The project is focused on developing and experimenting with strategies. 
-The features will be added gradually:
-   1. Reading YAML configuration, running a single backtest and returning results in human-readable form.
-   Indicator single-asset strategies
-   2. Strategy optimization
-   3. Multi-asset strategies
-   4. Portfolio optimization strategies
-   5. ML strategies, including pattern recognition
-   6. Adding AI text description to strategy
 
-## Desired workflow
-When implementing a feature, do the following:
+Hypothiq is focused on developing, testing, and experimenting with trading strategies using Backtrader.
+
+The project will evolve gradually:
+
+1. YAML configuration, single-backtest execution, human-readable results, and basic single-asset indicator strategies.
+2. Strategy optimization.
+3. Multi-asset strategies.
+4. Portfolio optimization strategies.
+5. ML strategies, including pattern recognition.
+6. AI-assisted strategy generation from text descriptions.
+
+The roadmap describes future direction, not requirements for the current feature. Do not build infrastructure for future stages unless the current task requires it.
+
+## Development workflow
+
+When implementing a feature:
+
 1. Develop each feature in a separate branch.
-2. If you lack essential working or contract information (
-for example types, meaning and names of a function arguments, class or module behavior and/or responsibilities),
-DO NOT start mindlessly implementing the feature even if asked explicitly "Implement this" or "Implement that".
-Instead, ask what's missing until you have enough information for an unambiguous implementation.
-3. If a change is about to affect a lot of files, do it on batches and explain what have been changed and why.
-4. Verify that the clean code requirements hold
-5. Add tests for the component. Including edge cases
-6. When done, create a PR with a meaningful title and description
-7. DO NOT merge on your own.
-8. DO NOT commit or push on main on your own.
+
+2. Before implementing, inspect the relevant existing code and understand the current contracts and architecture.
+
+3. If essential information is missing and it materially affects the public contract, architecture, or observable behavior, ask for clarification before implementing.
+
+   Do not ask about implementation details that can be reasonably inferred from the existing codebase, established conventions, or the task itself.
+
+4. Keep the change focused on the requested feature. Do not perform unrelated refactors, renames, formatting sweeps, or cleanup unless they are required by the feature.
+
+5. For cross-cutting changes affecting multiple components or responsibilities, work incrementally in coherent batches and explain what changed and why.
+
+6. Verify that the clean-code requirements below still hold.
+
+7. Add tests for the new behavior, including meaningful edge cases.
+
+8. When the feature is complete, create a PR with a meaningful title and description.
+
+9. DO NOT merge PRs on your own.
+
+10. DO NOT commit or push directly to `main`.
 
 ## Testing
-- Coverage is not as important as to ensure the correctness of the components.
-- If testing a component using some dependencies, use mocks for them.
 
-## Clean code requirements
-- The code must be well-formated and human-readable.
-- When wondering whether to write something readable or "clever and optimal" prefer the readable way
-unless if not too suboptimal.
-If a non-readable and/or "ugly" implementation is needed, explain and document why is it needed this way.
-- Add docstrings explaining the purpose of the component and briefly how it works.
-- Avoid creating big modules, classes and functions. each element (module, class or a function/method)
-must have a clear responsibility
-- If some file doesn't comply with the desired formatting (for example incorrect CSV or YAML), 
-throw a meaningful exception and terminate the execution. Don't try to resolve it
-- Don't flood the code with unnecessary and non-essential conversions and validations.
-- Prefer direct code over private helper functions. 
-Do not extract _validate_*, _normalize_*, _resolve_*, _ensure_* helpers unless:
-  - the logic is reused, 
-  - it represents a meaningful domain concept, 
-  - or extraction materially simplifies the caller.
-- Validate data at system boundaries, not repeatedly inside trusted internal code. 
-- Prefer narrow, explicit input contracts over accepting multiple equivalent representations. 
-- Do not add defensive compatibility layers unless explicitly requested. 
-- Before creating a helper, ask whether the caller would be clearer with the logic inline.
+* Correctness is more important than maximizing coverage.
+* Test observable behavior rather than implementation details.
+* Include meaningful edge cases where incorrect behavior is plausible.
+* Mock external systems, expensive dependencies, nondeterministic behavior, or collaborators outside the unit under test.
+* Do not mock simple value objects or stable internal collaborators unnecessarily.
+* Prefer small real inputs when they make tests clearer than mocks.
+* A bug fix should normally include a regression test when practical.
+
+## Design and clean-code requirements
+
+### General
+
+* Code must be well-formatted, readable, and easy to follow.
+* Prefer clear and direct code over clever implementations unless the simpler implementation would be materially inefficient.
+* If a less-readable implementation is necessary for performance or technical reasons, document why.
+
+### Responsibilities and abstractions
+
+* Modules, classes, and functions should have clear and cohesive responsibilities.
+* Do not split code merely to make functions, classes, or files smaller.
+* Introduce an abstraction only when it represents a meaningful concept, removes real duplication, or materially improves readability.
+* Before introducing a new abstraction, inspect the existing architecture and reuse established concepts where they still fit.
+* Do not create parallel abstractions for concepts already represented in the project.
+
+### YAGNI
+
+* Implement only what the current feature requires.
+* Do not introduce factories, registries, extension points, compatibility layers, configuration options, or generic infrastructure only because they may be useful in the future.
+* Prefer the simplest design that cleanly satisfies the current known requirements.
+
+### Validation and input contracts
+
+* Validate data at system boundaries.
+* Inside trusted internal code, rely on established contracts instead of repeatedly validating the same values.
+* Prefer narrow and explicit input contracts over accepting multiple equivalent representations.
+* If an external file or configuration does not follow the required format, raise a meaningful exception instead of guessing, silently correcting, or normalizing it.
+* Do not add defensive compatibility behavior unless explicitly required.
+
+### Helper functions
+
+Prefer direct code over unnecessary private helper functions.
+
+Do not extract `_validate_*`, `_normalize_*`, `_resolve_*`, `_ensure_*`, `_convert_*`, or similar helpers unless at least one of the following applies:
+
+* the logic is reused;
+* it represents a meaningful domain concept;
+* it isolates genuinely complex logic;
+* or extraction materially improves the readability of the caller.
+
+Before creating a helper, ask whether keeping the logic inline would make the code easier to understand.
+
+### Documentation
+
+* Add docstrings to public or non-obvious components when they clarify purpose, assumptions, contracts, or behavior.
+* Do not add docstrings or comments that merely restate the code, function name, or signature.
+* Comments should explain why something is done, not narrate what obvious code does.
+
+### Dependencies
+
+* Prefer the standard library and existing project dependencies when they solve the problem adequately.
+* Do not add a new dependency for functionality that can be implemented clearly and reasonably with existing tools.
+* If introducing a new dependency, explain why it is justified.
