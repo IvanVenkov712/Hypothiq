@@ -4,11 +4,7 @@ from datetime import datetime
 import backtrader as bt
 import pandas as pd
 
-from precoded_strategies.single_asset.breakout import DonchianBreakout, SimpleBollingerBandsBreakout
-from precoded_strategies.single_asset.buy_and_hold import BuyAndHold
-from precoded_strategies.single_asset.ma_cross import MACrossOver
-from precoded_strategies.single_asset.mean_reversion import MeanReversion
-from precoded_strategies.single_asset.rsi_strategy import RSIStrategy
+from precoded_strategies.single_asset.breakout import SimpleBollingerBandsBreakout
 
 df = pd.read_csv("../../data/AAPL.csv")
 
