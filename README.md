@@ -48,6 +48,6 @@ Run the tests from the repository root with the project virtual environment
 (PowerShell):
 
 ```powershell
-$env:PYTHONPATH = "src"
-.venv/Scripts/python.exe -m unittest discover -s test -v
+.venv/Scripts/python.exe -m pip install pytest
+.venv/Scripts/python.exe -m pytest
 ```

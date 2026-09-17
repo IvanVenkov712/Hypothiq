@@ -6,3 +6,10 @@ dependencies = [
     "pandas",
     "PyYAML",
 ]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+pythonpath = ["src"]
