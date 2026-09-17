@@ -6,6 +6,8 @@ import backtrader.analyzers as btanalyzers
 import pandas as pd
 from pandas import DataFrame
 
+from dto.backtest_request import BacktestRequest
+from dto.backtest_response import BacktestResponse
 from registry import resolve_params, strategy_by_name, sizer_by_name
 
 def datetime_from_conf(date_conf: dict[str, Any] | None) -> datetime | None:

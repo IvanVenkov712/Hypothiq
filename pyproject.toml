@@ -5,6 +5,7 @@ dependencies = [
     "backtrader==1.9.78.123",
     "pandas",
     "PyYAML",
+    "fastapi"
 ]
 
 [project.optional-dependencies]
