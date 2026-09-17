@@ -6,7 +6,7 @@ import backtrader.analyzers as btanalyzers
 import pandas as pd
 from pandas import DataFrame
 
-from registry import strategy_by_name, sizer_by_name
+from registry import resolve_params, strategy_by_name, sizer_by_name
 
 
 def run_backtest_single_asset(
@@ -25,10 +25,8 @@ def run_backtest_single_asset(
         comm_perc: float = 0.0
 
 ) -> dict[str, Any]:
-    if strategy_params is None:
-        strategy_params = {}
-    if sizer_params is None:
-        sizer_params = {}
+    strategy_params = resolve_params(strategy, strategy_params)
+    sizer_params = resolve_params(sizer, sizer_params)
 
     cerebro = bt.Cerebro()
     cerebro.adddata(bt.feeds.PandasData(dataname=frame, timeframe=bt.TimeFrame.Days))
@@ -61,10 +59,10 @@ def run_backtest_single_asset(
         'end_cash': cerebro.broker.cash,
         'end_value': cerebro.broker.get_value(),
         'total_return': 100 * (cerebro.broker.getvalue() / cash - 1),
-        'CAGR': strat.analyzers['returns'].get_analysis().rnorm,
-        'sharpe': strat.analyzers['sharpe'].get_analysis()['sharperatio'],
-        'closed_trades': strat.analyzers['trades'].get_analysis(),
-        'max_drawdown': strat.analyzers['drawdown'].get_analysis().max.drawdown,
+        'CAGR': strat.analyzers.returns.get_analysis()['rnorm'],
+        'sharpe': strat.analyzers.sharpe.get_analysis()['sharperatio'],
+        'closed_trades': strat.analyzers.trades.get_analysis(),
+        'max_drawdown': strat.analyzers.drawdown.get_analysis().max.drawdown,
     }
 
 def datetime_from_conf(date_conf: dict[str, Any] | None) -> datetime | None:
@@ -93,17 +91,17 @@ def feed_from_conf(data_conf: dict[str, Any]) -> bt.feeds.PandasData:
     return data
 
 def run_backtest_config(config: dict[str, Any]) -> dict[str, Any]:
+    strategy = strategy_by_name(config['strategy']['name'])
+    strategy_params = resolve_params(strategy, config['strategy'].get('params', {}))
+    if 'sizer' in config:
+        sizer = sizer_by_name(config['sizer']['name'])
+        sizer_params = resolve_params(sizer, config['sizer'].get('params', {}))
+
     cerebro = bt.Cerebro()
     cerebro.adddata(feed_from_conf(config['data']))
-    cerebro.addstrategy(
-        strategy_by_name(config['strategy']['name']),
-        **config['strategy'].get('params', {})
-    )
+    cerebro.addstrategy(strategy, **strategy_params)
     if 'sizer' in config:
-        cerebro.addsizer(
-            sizer_by_name(config['sizer']['name']),
-            **config['sizer'].get('params', {})
-        )
+        cerebro.addsizer(sizer, **sizer_params)
 
     broker_conf = config.get('broker', {})
     cash = broker_conf.get('cash', 10000.0)
@@ -135,8 +133,8 @@ def run_backtest_config(config: dict[str, Any]) -> dict[str, Any]:
         'end_cash': cerebro.broker.cash,
         'end_value': cerebro.broker.get_value(),
         'total_return': 100 * (cerebro.broker.getvalue() / cash - 1),
-        'CAGR': strat.analyzers['returns'].get_analysis().rnorm100,
-        'sharpe': strat.analyzers['sharpe'].get_analysis()['sharperatio'],
-        'closed_trades': strat.analyzers['trades'].get_analysis().total.closed,
-        'max_drawdown': strat.analyzers['drawdown'].get_analysis().max.drawdown,
+        'CAGR': strat.analyzers.returns.get_analysis()['rnorm100'],
+        'sharpe': strat.analyzers.sharpe.get_analysis()['sharperatio'],
+        'closed_trades': strat.analyzers.trades.get_analysis().get('total', {}).get('closed', 0),
+        'max_drawdown': strat.analyzers.drawdown.get_analysis().max.drawdown,
     }

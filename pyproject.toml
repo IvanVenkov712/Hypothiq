@@ -2,5 +2,7 @@
 name = "hypothiq"
 version = "0.1.0"
 dependencies = [
+    "backtrader==1.9.78.123",
+    "pandas",
     "nautilus_trader==2.0.0rc4",
 ]
