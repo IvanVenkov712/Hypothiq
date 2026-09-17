@@ -77,6 +77,8 @@ def datetime_from_conf(date_conf: dict[str, Any] | None) -> datetime | None:
 
 def feed_from_conf(data_conf: dict[str, Any]) -> bt.feeds.PandasData:
     df = pd.read_csv(data_conf['path'])
+    df["date"] = pd.to_datetime(df["date"])
+    df.set_index("date", inplace=True)
     data = bt.feeds.PandasData(
         dataname=df,
         fromdate=datetime_from_conf(data_conf.get('fromdate', None)),
