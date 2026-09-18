@@ -1,8 +1,10 @@
+from fastapi import FastAPI
 
+from routers.backtest_router import backtests_router
 
+app = FastAPI()
+app.include_router(backtests_router)
 
-def main():
-    pass
-
-if __name__ == "__main__":
-    main()
+@app.get("/health")
+def health():
+    return {"status": "ok"}
