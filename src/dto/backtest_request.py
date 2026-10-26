@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Any
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class StrategyRequest(BaseModel):
@@ -12,7 +12,7 @@ class SizerRequest(BaseModel):
     params: dict[str, Any] = {}
 
 class DataRequest(BaseModel):
-    tickers: list[str]
+    ticker: str
     start: datetime
     end: datetime
     interval: str = "1d"
@@ -45,7 +45,9 @@ class CommissionRequest(BaseModel):
     name: str | None = None
 
 class BrokerRequest(BaseModel):
-    cash: float = 10_000
+    cash: float = Field(
+        default=10000, gt=0, title="The initial cash for the backtest", description='Cash must be greater than 0'
+    )
     slippage_perc: SlippagePercentRequest | None = None
     slippage_fixed: SlippageFixedRequest | None = None
     commission: CommissionRequest = CommissionRequest()

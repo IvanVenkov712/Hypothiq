@@ -12,7 +12,7 @@ from registry import resolve_params, strategy_by_name, sizer_by_name
 
 def get_data_y_finance(request: DataRequest):
     df = yf.download(
-        tickers=request.tickers,
+        tickers=request.ticker,
         interval=request.interval,
         start=request.start,
         end=request.end,
@@ -21,6 +21,9 @@ def get_data_y_finance(request: DataRequest):
 
     if df is None:
         raise ValueError('An error occurred during yfinance data download')
+    
+    if df.empty:
+        raise ValueError("There are no records")
 
     data = bt.feeds.PandasData(
         dataname=df,

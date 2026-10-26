@@ -2,18 +2,8 @@
 
 ## Project description
 
-Hypothiq is focused on developing, testing, and experimenting with trading strategies using Backtrader.
+Hypothiq is focused on trading strategies research and comparison.
 
-The project will evolve gradually:
-
-1. YAML configuration, single-backtest execution, human-readable results, and basic single-asset indicator strategies.
-2. Strategy optimization.
-3. Multi-asset strategies.
-4. Portfolio optimization strategies.
-5. ML strategies, including pattern recognition.
-6. AI-assisted strategy generation from text descriptions.
-
-The roadmap describes future direction, not requirements for the current feature. Do not build infrastructure for future stages unless the current task requires it.
 
 ## Development workflow
 
