@@ -15,16 +15,17 @@ def get_data_y_finance(request: DataRequest):
         tickers=request.tickers,
         interval=request.interval,
         start=request.start,
-        end=request.end
+        end=request.end,
+        multi_level_index=False,
     )
 
     if df is None:
         raise ValueError('An error occurred during yfinance data download')
 
-    df['date'] = pd.to_datetime(df['date'])
-    df.set_index('date', inplace=True)
     data = bt.feeds.PandasData(
         dataname=df,
+        fromdate=request.start,
+        todate=request.end
     )
     return data
 

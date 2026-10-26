@@ -10,7 +10,7 @@ backtests_router = fastapi.APIRouter(
     tags=['backtests']
 )
 
-@backtests_router.post("run-backtest", response_model=BacktestResponse)
+@backtests_router.post("/run-backtest", response_model=BacktestResponse)
 def run_backtest(request: BacktestRequest) -> BacktestResponse:
     try:
         return run_backtest_by_request(request)
