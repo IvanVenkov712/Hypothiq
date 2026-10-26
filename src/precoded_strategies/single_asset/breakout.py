@@ -28,7 +28,7 @@ class SimpleBollingerBandsBreakout(bt.Strategy):
 
     def __init__(self):
         self.bands = btind.BollingerBands(
-            period=self.p.interval,
+            period=self.p.period,
             devfactor=self.p.devfactor,
             movav=self.p.movav
         )

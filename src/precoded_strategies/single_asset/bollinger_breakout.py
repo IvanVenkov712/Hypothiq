@@ -104,7 +104,7 @@ class BollingerBreakout(bt.Strategy):
             raise ValueError("stop_loss must be None or a fraction in (0, 1)")
 
         self.bands = btind.BollingerBands(
-            self.data.close, period=self.p.interval, devfactor=self.p.devfactor,
+            self.data.close, period=self.p.period, devfactor=self.p.devfactor,
             movav=btind.MovingAverageSimple,
         )
         self._widths = deque(maxlen=self.p.squeeze_lookback)

@@ -12,7 +12,7 @@ class RSIStrategy(bt.Strategy):
     )
 
     def __init__(self):
-        self.rsi = btind.RelativeStrengthIndex(movav=self.p.movav, period=self.p.interval)
+        self.rsi = btind.RelativeStrengthIndex(movav=self.p.movav, period=self.p.period)
 
     def next(self):
         if not self.position:
