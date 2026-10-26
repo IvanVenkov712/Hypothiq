@@ -1,6 +1,5 @@
 import fastapi
 from fastapi import HTTPException
-from pydantic import BaseModel
 
 from dto.backtest_request import BacktestRequest
 from dto.backtest_response import BacktestResponse

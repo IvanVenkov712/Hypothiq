@@ -11,6 +11,12 @@ class SizerRequest(BaseModel):
     name: str = 'FixedSize'
     params: dict[str, Any] = {}
 
+class DataRequest(BaseModel):
+    tickers: list[str]
+    start: datetime
+    end: datetime
+    interval: str = "1d"
+
 class SlippagePercentRequest(BaseModel):
     perc: float = 0.0
     slip_open: bool = True
@@ -46,7 +52,6 @@ class BrokerRequest(BaseModel):
 
 class BacktestRequest(BaseModel):
     strategy: StrategyRequest
-    fromdate: datetime | None = None
-    todate: datetime | None = None
+    data_request: DataRequest
     broker: BrokerRequest = BrokerRequest()
     sizer: SizerRequest = SizerRequest()

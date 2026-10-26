@@ -4,10 +4,29 @@ from pathlib import Path
 import backtrader as bt
 import backtrader.analyzers as btanalyzers
 import pandas as pd
+import yfinance as yf
 
-from dto.backtest_request import BacktestRequest
+from dto.backtest_request import BacktestRequest, DataRequest
 from dto.backtest_response import BacktestResponse
 from registry import resolve_params, strategy_by_name, sizer_by_name
+
+def get_data_y_finance(request: DataRequest):
+    df = yf.download(
+        tickers=request.tickers,
+        interval=request.interval,
+        start=request.start,
+        end=request.end
+    )
+
+    if df is None:
+        raise ValueError('An error occurred during yfinance data download')
+
+    df['date'] = pd.to_datetime(df['date'])
+    df.set_index('date', inplace=True)
+    data = bt.feeds.PandasData(
+        dataname=df,
+    )
+    return data
 
 def get_data(fromdate: datetime | None = None, todate: datetime | None = None):
     df = pd.read_csv(Path(__file__).resolve().parents[2] / 'data' / 'AAPL.csv')
@@ -27,7 +46,7 @@ def run_backtest_by_request(request: BacktestRequest) -> BacktestResponse:
     sizer_params = resolve_params(sizer, request.sizer.params)
     cerebro = bt.Cerebro()
 
-    cerebro.adddata(get_data(request.fromdate, request.todate))
+    cerebro.adddata(get_data_y_finance(request.data_request))
     cerebro.addstrategy(strategy, **strategy_params)
     cerebro.addsizer(sizer, **sizer_params)
 

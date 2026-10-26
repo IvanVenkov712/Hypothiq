@@ -9,7 +9,7 @@ class MeanReversion(bt.Strategy):
     )
 
     def __init__(self):
-        self.ma = self.p.movav(period=self.p.period)
+        self.ma = self.p.movav(period=self.p.interval)
 
     def next(self):
         if not self.position:

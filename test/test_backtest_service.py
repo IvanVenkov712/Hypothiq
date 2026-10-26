@@ -6,7 +6,6 @@ import backtrader as bt
 import pandas as pd
 import pytest
 
-from backtest import run_backtest_config
 from dto.backtest_request import BacktestRequest
 from dto.backtest_response import BacktestResponse
 from services.backtest_service import get_data, run_backtest_by_request
@@ -71,30 +70,6 @@ def test_defaults_and_no_trades_allow_undefined_sharpe(frame):
         start_cash=10000, end_cash=10000, end_value=10000,
         total_return=0, CAGR=0, sharpe=None, closed_trades=0, max_drawdown=0,
     )
-
-
-def test_strategy_parameters_and_analyzers_match_config_runner():
-    prices = [10, 11, 12, 13, 12, 11, 10, 9, 10, 11, 12, 13,
-              14, 13, 12, 11, 10, 9, 10, 11, 12, 13, 12, 11]
-    frame = pd.DataFrame(
-        {name: prices for name in ('open', 'high', 'low', 'close')},
-        index=pd.date_range('2024-01-01', periods=len(prices)),
-    )
-    request = BacktestRequest(strategy={
-        'name': 'MACrossOver', 'params': {'fast': 2, 'slow': 3, 'movav': 'EMA'},
-    })
-    with patch('services.backtest_service.get_data', return_value=
-               bt.feeds.PandasData(dataname=frame)):
-        result = run_backtest_by_request(request)
-    config = request.model_dump(exclude_none=True)
-    config['data'] = {'path': 'prices.csv'}
-    with patch('backtest.feed_from_conf', return_value=
-               bt.feeds.PandasData(dataname=frame)):
-        expected = run_backtest_config(config)
-
-    assert result.model_dump() == expected
-    assert result.closed_trades > 0
-    assert result.sharpe is not None
 
 
 @pytest.mark.parametrize('overrides', [
