@@ -2,7 +2,7 @@ import backtrader as bt
 import pandas as pd
 import pytest
 
-from precoded_strategies.single_asset import RSIStrategy
+from precoded_strategies.single_asset.rsi_strategy import RSIStrategy
 
 
 @pytest.mark.parametrize('runonce', [True, False])

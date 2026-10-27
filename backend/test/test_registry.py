@@ -1,8 +1,8 @@
 import backtrader as bt
 import pytest
 
-from precoded_strategies.single_asset import BuyAndHold
-from precoded_strategies.single_asset import MACrossOver
+from precoded_strategies.single_asset.buy_and_hold import BuyAndHold
+from precoded_strategies.single_asset.ma_cross import MACrossOver
 from registry import indicator_by_name, resolve_params, sizer_by_name, strategy_by_name
 
 
