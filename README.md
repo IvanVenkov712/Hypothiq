@@ -5,16 +5,19 @@ trading strategies. This defines the intended product scope; strategy creation
 and sharing are planned capabilities. The current implementation focuses on
 historical backtesting: its Python API runs predefined Backtrader strategies
 against Yahoo Finance prices and returns performance metrics. The React
-interface provides a searchable strategy catalogue with parameter details.
+interface provides a searchable strategy catalogue and a backtesting workspace.
 
 The project is partway through its first MVP. Running backtests is available
-through the API; the browser backtest form and results visualizations are the
-next major steps. Hypothiq focuses on research, with no live trading integration.
+through the API and browser, with summary metrics displayed after each run.
+Equity and trade visualizations are planned. Hypothiq focuses on research,
+with no live trading integration.
 
 ## What works today
 
 - Browse and search the live strategy catalogue, expand parameter definitions,
   and inspect defaults, suggested values, nullability, and published bounds.
+- Start from the home page, browse `/strategies`, and configure a daily-bar
+  backtest at `/backtesting`, including strategy parameters and execution costs.
 - Run a single-asset backtest through FastAPI using historical OHLCV data
   downloaded with `yfinance`.
 - Choose a registered strategy and Backtrader position sizer; apply initial cash,
@@ -79,7 +82,7 @@ the component diagram, request flows, and current limitations.
 
 ## Plans and next features
 
-The immediate goal is to complete the single-asset MVP: add a backtest form,
+The immediate goal is to complete the single-asset MVP:
 strengthen input and market-data validation, return equity and trade histories,
 and display results with charts and a benchmark. Later phases cover strategy
 comparison, multi-asset portfolios, accounts and strategy sharing, and AI-assisted

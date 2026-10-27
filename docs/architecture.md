@@ -10,14 +10,15 @@ Hypothiq is intended to support researching, sharing, creating, and testing
 algorithmic trading strategies. This scope guides the architecture and
 [roadmap](roadmap.md); it does not imply that all capabilities are implemented.
 Today, users can discover predefined strategies and test them on historical
-market data through the API. Strategy creation and sharing are planned work.
+market data in the browser or through the API. Strategy creation and sharing
+are planned work.
 
 ## Components and boundaries
 
 ```mermaid
 flowchart TD
-    UI[React strategy catalogue] -->|GET /api/strategies| Proxy[Vite development proxy]
-    Proxy -->|GET /strategies| API[FastAPI routers]
+    UI[React catalogue and backtesting] -->|GET /api/strategies and POST /api/backtests/run-backtest| Proxy[Vite development proxy]
+    Proxy -->|Strip /api prefix| API[FastAPI routers]
     Caller[API client or Swagger UI] -->|POST /backtests/run-backtest| API
     API --> Catalog[Strategy catalogue]
     Catalog --> Registry[Strategy and parameter registry]
@@ -28,18 +29,24 @@ flowchart TD
     Yahoo -->|pandas data feed| Engine
     Engine -->|Analyzer output| Metrics[BacktestResponse]
     Metrics --> Caller
+    Metrics --> UI
 ```
 
-The browser currently consumes only the catalogue endpoint. The backtest API is
-usable independently through Swagger UI or an HTTP client. Frontend-to-backend
+The browser consumes the catalogue and backtest endpoints. The backtest API is
+also usable independently through Swagger UI or an HTTP client. Frontend-to-backend
 requests use the proxy contract described under
 [deployment assumptions](#deployment-assumptions); Vite supplies this proxy
 during local development.
 
 | Location | Responsibility |
 | --- | --- |
-| `frontend/src/App.tsx` | Catalogue loading, retry, search, sorting, and expandable parameter tables. |
+| `frontend/src/App.tsx` | Page selection and shared navigation, header, and footer. |
+| `frontend/src/Home.tsx` | Platform introduction and links to catalogue and backtesting. |
+| `frontend/src/StrategyCatalog.tsx` | Catalogue search, sorting, and expandable parameter tables. |
+| `frontend/src/Backtesting.tsx` | Metadata-driven configuration, submission, and aggregate results. |
+| `frontend/src/hooks/useStrategyCatalog.ts` | Cancellable catalogue loading and retry shared by both workspaces. |
 | `frontend/src/api/strategies.ts` | TypeScript response types and cancellable catalogue fetch. |
+| `frontend/src/api/backtests.ts` | Typed backtest requests/results and HTTP error handling. |
 | `frontend/vite.config.ts` | React tooling and the local `/api` proxy to port 8000. |
 | `backend/src/main.py` | FastAPI application, router registration, and health endpoint. |
 | `backend/src/routers/` | HTTP request/response boundaries and service calls. |
@@ -68,6 +75,11 @@ execution validation rules. Strategies remain responsible for their own domain
 constraints.
 
 ## Backtest flow
+
+The browser loads strategy metadata, validates required fields, parameter bounds,
+and date order, and posts to `/api/backtests/run-backtest`. Human percentage
+inputs are converted to fractions for commission and percentage slippage;
+`PercentSizer` uses percentage units directly. Browser runs use daily bars.
 
 1. FastAPI validates the body as a `BacktestRequest`. Starting cash must be positive.
 2. The service resolves the strategy, sizer, and parameter names before requesting
@@ -117,7 +129,7 @@ reverse proxy. Nginx is the most likely implementation, but the final proxy
 choice remains open. The deployment contract is:
 
 - The reverse proxy exposes a single public origin and serves the built
-  frontend assets.
+  frontend assets, with `index.html` fallback for frontend page routes.
 - The browser uses relative `/api/*` URLs on that origin for backend requests.
 - The proxy forwards these requests to FastAPI after stripping the `/api`
   prefix. For example, `/api/strategies` becomes `/strategies` on the backend.
@@ -133,7 +145,7 @@ The current service has no authentication, persistence, custom code uploads, or
 live broker integration. `backend/Dockerfile` is a placeholder that runs `top`;
 it does not package or serve Hypothiq.
 
-The [roadmap](roadmap.md) adds result histories and browser execution first,
+The [roadmap](roadmap.md) adds result histories and visualizations next,
 then comparison and multi-asset support. Accounts and saved research require
 persistence. User-supplied and AI-generated Python require isolated execution
 with resource limits before those features can be introduced.

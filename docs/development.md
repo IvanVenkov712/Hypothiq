@@ -44,8 +44,10 @@ npm run build
 
 Lint uses Oxlint. The build runs TypeScript checks followed by Vite bundling.
 There is no frontend automated test script yet. For a manual integration check,
-start both servers and verify catalogue loading, search, expanded parameter
-details, and retry after an API outage. An API test run can be submitted through
+start both servers and verify home-page navigation, catalogue loading, search,
+expanded parameter details, and retry after an API outage. Follow a strategy's
+backtest link, adjust inputs, and submit at `/backtesting` to inspect metrics.
+Check invalid date order and retry after a failed run. An API test run can also be submitted through
 `http://127.0.0.1:8000/docs`; this requires network access for prices.
 
 ## Adding a predefined strategy
@@ -78,7 +80,8 @@ provides a local build preview; it is not a production deployment setup. Only th
 development server has an explicitly configured API proxy.
 
 The production deployment assumes a reverse proxy, most likely Nginx, serving
-the static assets and routing same-origin `/api/*` requests to FastAPI after
+the static assets, falling back to `index.html` for frontend page routes, and
+routing same-origin `/api/*` requests to FastAPI after
 stripping `/api`. The proxy choice is not finalized; see the
 [deployment assumptions](architecture.md#deployment-assumptions) for the contract.
 The backend currently neither serves the frontend bundle nor configures CORS.
