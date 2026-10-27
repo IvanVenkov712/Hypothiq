@@ -1,32 +1,39 @@
-# React + TypeScript + Vite
+# Hypothiq frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The React + TypeScript frontend displays the live strategy catalogue from the
+FastAPI backend. Search by strategy name, identifier, description, or parameter.
+Expand a strategy to inspect its parameter types, default values,
+suggested choices, nullability, and published bounds.
 
-Currently, two official plugins are available:
+## Local development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+With the backend dependencies and `uvicorn` installed in `backend/.venv`, start
+the API from the repository root:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```powershell
+.\backend\.venv\Scripts\python.exe -m uvicorn main:app --app-dir backend/src
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+In a second terminal, start the frontend:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open the URL printed by Vite, normally `http://localhost:5173`.
+Vite proxies `/api/strategies` to `http://127.0.0.1:8000/strategies`, so no
+development CORS configuration is needed. Strategy data comes exclusively from
+the backend; the page handles loading, errors with retry, and empty results.
+
+## Build
+
+```powershell
+npm run build
+```
+
+This runs TypeScript checks and writes the production bundle to `dist/`.
+Production hosting must route `/api/*` to the backend with the `/api` prefix
+removed, alongside serving the frontend assets. The development proxy is not
+included in the static bundle.
