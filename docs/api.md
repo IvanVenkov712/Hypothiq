@@ -13,9 +13,11 @@ The current API has no authentication.
 
 The frontend uses `/api/strategies`. Its development proxy removes `/api` before
 forwarding the request; the backend routes themselves have no `/api` prefix.
-Production deployment assumes the same mapping through a same-origin reverse
-proxy, most likely Nginx. See the
-[deployment assumptions](architecture.md#deployment-assumptions).
+The Docker Compose deployment uses Nginx for the same mapping. Its public API
+base URL is `http://localhost:8080/api`; documentation is at `/api/docs` and
+`/api/redoc`, and the schema is at `/api/openapi.json` on that origin.
+The endpoint paths below are relative to the API base URL. See
+[deployment](deployment.md) for setup and port configuration.
 
 ## Strategy catalogue
 

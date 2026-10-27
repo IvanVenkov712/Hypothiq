@@ -79,14 +79,25 @@ together.
 provides a local build preview; it is not a production deployment setup. Only the
 development server has an explicitly configured API proxy.
 
-The production deployment assumes a reverse proxy, most likely Nginx, serving
-the static assets, falling back to `index.html` for frontend page routes, and
-routing same-origin `/api/*` requests to FastAPI after
-stripping `/api`. The proxy choice is not finalized; see the
-[deployment assumptions](architecture.md#deployment-assumptions) for the contract.
-The backend currently neither serves the frontend bundle nor configures CORS.
-No working production container or deployment recipe is included;
-`backend/Dockerfile` is a placeholder.
+Use [Docker Compose deployment](deployment.md) to build and run the production
+frontend with Nginx. `frontend/nginx.conf` serves static assets, falls back to
+`index.html` for frontend page routes, and forwards `/api/*` to FastAPI after
+stripping `/api`. The backend neither serves the bundle nor requires CORS for
+these same-origin requests. Uvicorn is a declared backend runtime dependency,
+so installing the project also installs the API server.
+
+With the Compose stack running, run the deployment smoke tests from the
+repository root:
+
+```powershell
+python -m unittest discover -s tests/deployment -v
+```
+
+These tests use only Python's standard library. They check built assets, frontend
+deep links, API health and catalogue responses, prefixed Swagger/OpenAPI URLs,
+redirects, and JSON error handling without downloading market data. They require
+the deployed Nginx stack, not Vite. Set `HYPOTHIQ_URL` if using a different port
+or host; see the [deployment guide](deployment.md#verify-the-deployment).
 
 ## Troubleshooting
 
@@ -95,5 +106,5 @@ No working production container or deployment recipe is included;
 | Imports such as `routers` fail | Use `--app-dir` relative to your working directory; run pytest from `backend`. |
 | Catalogue is unavailable | Check `GET http://127.0.0.1:8000/health`, API logs, and that Vite can reach port 8000. |
 | Catalogue works but backtesting fails | Inspect API error details; Yahoo availability, symbol/date/interval combinations, and indicator warm-up requirements affect execution. |
-| Browser requests fail after deployment | Configure the production `/api` reverse proxy; the development proxy is not bundled. |
+| Browser requests fail after deployment | Use the Nginx origin, check `/api/health`, and inspect `docker compose logs frontend backend`. |
 | PowerShell blocks activation scripts | Use the virtual environment's Python executable directly, as in the quickstart; activation is unnecessary. |

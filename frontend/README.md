@@ -24,7 +24,8 @@ See the [project README](../README.md) for full installation instructions,
 
 ## Local development
 
-With the backend dependencies and `uvicorn` installed in `backend/.venv`, start
+With the backend project installed in `backend/.venv` (including its declared
+`uvicorn` dependency), start
 the API from the repository root:
 
 ```powershell
@@ -51,12 +52,20 @@ npm run build
 ```
 
 This runs TypeScript checks and writes the production bundle to `dist/`.
-Production deployment assumes a reverse proxy, most likely Nginx, serving the
-frontend assets and routing same-origin `/api/*` requests to the backend with
-the `/api` prefix removed. Frontend routes such as `/strategies` and
-`/backtesting` must fall back to `index.html`. The proxy choice remains open; see the
-[deployment assumptions](../docs/architecture.md#deployment-assumptions).
-The development proxy is not included in the static bundle.
+`frontend/Dockerfile` builds this bundle in a Node.js build stage, then serves it
+with Nginx using `nginx.conf`. Nginx routes same-origin `/api/*` requests to the
+backend with `/api` removed and falls back to `index.html` for frontend routes
+such as `/strategies` and `/backtesting`. Missing `/assets/*` files return 404.
+The development proxy is not included in the static bundle. Run the frontend
+and backend together with Docker Compose from the repository root:
+
+```powershell
+docker compose up --build -d --wait
+```
+
+Open <http://localhost:8080>. See [deployment](../docs/deployment.md) for
+configuration and verification. `npm run preview` is only a local bundle preview;
+it does not supply the production API proxy.
 
 Run `npm run lint` for Oxlint checks. There is no frontend automated test script
 yet. See the [development guide](../docs/development.md) for integration checks

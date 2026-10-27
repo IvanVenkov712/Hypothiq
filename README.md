@@ -43,7 +43,7 @@ start the backend:
 ```powershell
 cd backend
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install ".[test]" uvicorn
+.\.venv\Scripts\python.exe -m pip install ".[test]"
 .\.venv\Scripts\python.exe -m uvicorn main:app --app-dir src --reload
 ```
 
@@ -64,6 +64,31 @@ On macOS/Linux, use `.venv/bin/python` in place of
 `.\.venv\Scripts\python.exe`. No database, account setup, or API key is currently
 required. See [development](docs/development.md) for checks and troubleshooting.
 
+## Deploy with Docker Compose
+
+Install Docker with the Compose plugin and start its Linux container engine.
+From the repository root:
+
+```powershell
+docker compose up --build -d --wait
+```
+
+`docker compose up` creates and starts the services defined in `docker-compose.yaml`:
+
+- `--build` builds the images before starting the containers, reusing cached layers where possible.
+- `-d` (detached mode) runs the containers in the background.
+- `--wait` waits until the services are running or healthy before returning;
+  both services here have health checks, so it waits for those checks to pass.
+
+`--wait` already implies detached mode; `-d` makes that behavior explicit.
+See the [Docker Compose command reference](https://docs.docker.com/reference/cli/docker/compose/up/).
+
+Open <http://localhost:8080>. Nginx serves the frontend and proxies `/api/*`
+to the private backend. API documentation is at <http://localhost:8080/api/docs>.
+Python and Node.js are installed inside the build images; host installations
+are only needed for local development. See [deployment](docs/deployment.md) for
+port configuration, verification, updates, logs, and HTTPS setup.
+
 ## Architecture
 
 The React/TypeScript frontend calls a FastAPI backend. A strategy registry and
@@ -71,10 +96,9 @@ catalogue provide strategy identities and parameter metadata. The backtest
 service downloads prices, creates a fresh Backtrader engine for each request,
 applies broker settings, and maps analyzer output to a JSON response.
 
-Deployment assumes a reverse proxy, most likely Nginx, serving the frontend and
-forwarding same-origin `/api/*` requests to the backend with `/api` removed.
-Nginx is the preferred candidate, not a finalized infrastructure choice; a
-production deployment configuration has not yet been implemented.
+The Docker Compose deployment uses Nginx to serve the built frontend and
+forward same-origin `/api/*` requests to the backend with `/api` removed.
+Only Nginx publishes a host port; Uvicorn runs on the internal Compose network.
 
 Backtests run synchronously in the API process. Results are returned to the
 caller without persistent storage. See [architecture](docs/architecture.md) for
@@ -93,6 +117,7 @@ completion criteria.
 
 - [Architecture](docs/architecture.md): components, boundaries, and execution flow.
 - [Development](docs/development.md): workflow, checks, builds, and strategy additions.
+- [Deployment](docs/deployment.md): Docker Compose, Nginx routing, and operations.
 - [HTTP API](docs/api.md): endpoints, an example request, result units, and errors.
 - [Roadmap](docs/roadmap.md): current status and future phases.
 - [Frontend](frontend/README.md): catalogue behavior and frontend commands.

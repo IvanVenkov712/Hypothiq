@@ -17,7 +17,7 @@ are planned work.
 
 ```mermaid
 flowchart TD
-    UI[React catalogue and backtesting] -->|GET /api/strategies and POST /api/backtests/run-backtest| Proxy[Vite development proxy]
+    UI[React catalogue and backtesting] -->|GET /api/strategies and POST /api/backtests/run-backtest| Proxy[Nginx in deployment / Vite in development]
     Proxy -->|Strip /api prefix| API[FastAPI routers]
     Caller[API client or Swagger UI] -->|POST /backtests/run-backtest| API
     API --> Catalog[Strategy catalogue]
@@ -48,6 +48,8 @@ during local development.
 | `frontend/src/api/strategies.ts` | TypeScript response types and cancellable catalogue fetch. |
 | `frontend/src/api/backtests.ts` | Typed backtest requests/results and HTTP error handling. |
 | `frontend/vite.config.ts` | React tooling and the local `/api` proxy to port 8000. |
+| `frontend/nginx.conf` | Deployed static frontend, page fallback, and `/api/` reverse proxy. |
+| `docker-compose.yaml` | Frontend/backend builds, public Nginx port, and health-based startup. |
 | `backend/src/main.py` | FastAPI application, router registration, and health endpoint. |
 | `backend/src/routers/` | HTTP request/response boundaries and service calls. |
 | `backend/src/dto/` | Pydantic request, catalogue, and backtest result models. |
@@ -125,9 +127,8 @@ constructs its own engine and does not mutate the submitted request.
 
 ## Deployment assumptions
 
-The intended production topology connects the frontend and backend through a
-reverse proxy. Nginx is the most likely implementation, but the final proxy
-choice remains open. The deployment contract is:
+The Docker Compose topology connects the frontend and backend through Nginx.
+The deployment contract is:
 
 - The reverse proxy exposes a single public origin and serves the built
   frontend assets, with `index.html` fallback for frontend page routes.
@@ -137,14 +138,19 @@ choice remains open. The deployment contract is:
 - Vite's proxy provides equivalent API routing during development; it is not
   included in the production bundle.
 
-These are deployment assumptions, not an implemented production setup. No
-production reverse-proxy configuration is currently included in the repository.
+`frontend/Dockerfile` builds the client with Node.js and copies the assets into
+an Nginx runtime image. `backend/Dockerfile` installs the Python application and
+starts Uvicorn as a non-root user with `/api` as its ASGI root path, so Swagger
+and OpenAPI work through the proxy. The backend has no published host port.
+Compose waits for its health check before starting Nginx. Nginx refreshes the
+backend's Docker DNS address so replacing the API container does not leave a
+stale upstream address. See [deployment](deployment.md) for the runbook.
 
 ## Current boundaries and future changes
 
 The current service has no authentication, persistence, custom code uploads, or
-live broker integration. `backend/Dockerfile` is a placeholder that runs `top`;
-it does not package or serve Hypothiq.
+live broker integration. Compose provides an HTTP deployment; TLS certificates
+and public HTTPS configuration are deployment-specific.
 
 The [roadmap](roadmap.md) adds result histories and visualizations next,
 then comparison and multi-asset support. Accounts and saved research require

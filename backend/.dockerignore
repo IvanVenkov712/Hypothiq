@@ -1,0 +1,8 @@
+*
+!pyproject.toml
+!src/
+!src/**
+!data/
+!data/**
+**/__pycache__/
+**/*.py[cod]
