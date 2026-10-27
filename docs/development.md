@@ -77,9 +77,12 @@ together.
 provides a local build preview; it is not a production deployment setup. Only the
 development server has an explicitly configured API proxy.
 
-Production hosting must serve the static assets and route `/api/*` to FastAPI,
-stripping `/api`. The backend currently neither serves the frontend bundle nor
-configures CORS. No working production container or deployment recipe is included;
+The production deployment assumes a reverse proxy, most likely Nginx, serving
+the static assets and routing same-origin `/api/*` requests to FastAPI after
+stripping `/api`. The proxy choice is not finalized; see the
+[deployment assumptions](architecture.md#deployment-assumptions) for the contract.
+The backend currently neither serves the frontend bundle nor configures CORS.
+No working production container or deployment recipe is included;
 `backend/Dockerfile` is a placeholder.
 
 ## Troubleshooting

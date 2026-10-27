@@ -1,9 +1,11 @@
 # Hypothiq
 
-Hypothiq is a web application for researching algorithmic trading strategies on
-historical market data. Its Python API runs predefined Backtrader strategies
-against Yahoo Finance prices and returns performance metrics. The React interface
-currently provides a searchable strategy catalogue with parameter details.
+Hypothiq is a platform for researching, sharing, creating, and testing algorithmic
+trading strategies. This defines the intended product scope; strategy creation
+and sharing are planned capabilities. The current implementation focuses on
+historical backtesting: its Python API runs predefined Backtrader strategies
+against Yahoo Finance prices and returns performance metrics. The React
+interface provides a searchable strategy catalogue with parameter details.
 
 The project is partway through its first MVP. Running backtests is available
 through the API; the browser backtest form and results visualizations are the
@@ -65,6 +67,11 @@ The React/TypeScript frontend calls a FastAPI backend. A strategy registry and
 catalogue provide strategy identities and parameter metadata. The backtest
 service downloads prices, creates a fresh Backtrader engine for each request,
 applies broker settings, and maps analyzer output to a JSON response.
+
+Deployment assumes a reverse proxy, most likely Nginx, serving the frontend and
+forwarding same-origin `/api/*` requests to the backend with `/api` removed.
+Nginx is the preferred candidate, not a finalized infrastructure choice; a
+production deployment configuration has not yet been implemented.
 
 Backtests run synchronously in the API process. Results are returned to the
 caller without persistent storage. See [architecture](docs/architecture.md) for

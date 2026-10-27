@@ -4,6 +4,14 @@ Hypothiq has two applications: a React/TypeScript client built with Vite and a
 Python FastAPI service using Backtrader, pandas, and `yfinance`. There is no
 database or background-job infrastructure in the current implementation.
 
+## Product scope
+
+Hypothiq is intended to support researching, sharing, creating, and testing
+algorithmic trading strategies. This scope guides the architecture and
+[roadmap](roadmap.md); it does not imply that all capabilities are implemented.
+Today, users can discover predefined strategies and test them on historical
+market data through the API. Strategy creation and sharing are planned work.
+
 ## Components and boundaries
 
 ```mermaid
@@ -23,9 +31,10 @@ flowchart TD
 ```
 
 The browser currently consumes only the catalogue endpoint. The backtest API is
-usable independently through Swagger UI or an HTTP client. In production, a
-reverse proxy must serve the frontend and forward `/api/*` to the backend with
-the `/api` prefix removed; Vite's development proxy is not part of the bundle.
+usable independently through Swagger UI or an HTTP client. Frontend-to-backend
+requests use the proxy contract described under
+[deployment assumptions](#deployment-assumptions); Vite supplies this proxy
+during local development.
 
 | Location | Responsibility |
 | --- | --- |
@@ -101,7 +110,24 @@ constructs its own engine and does not mutate the submitted request.
   constraints implemented by individual strategies. There is no complete shared
   validation of date ordering, provider intervals, OHLCV quality, or warm-up length.
 
-## Deployment boundary and future changes
+## Deployment assumptions
+
+The intended production topology connects the frontend and backend through a
+reverse proxy. Nginx is the most likely implementation, but the final proxy
+choice remains open. The deployment contract is:
+
+- The reverse proxy exposes a single public origin and serves the built
+  frontend assets.
+- The browser uses relative `/api/*` URLs on that origin for backend requests.
+- The proxy forwards these requests to FastAPI after stripping the `/api`
+  prefix. For example, `/api/strategies` becomes `/strategies` on the backend.
+- Vite's proxy provides equivalent API routing during development; it is not
+  included in the production bundle.
+
+These are deployment assumptions, not an implemented production setup. No
+production reverse-proxy configuration is currently included in the repository.
+
+## Current boundaries and future changes
 
 The current service has no authentication, persistence, custom code uploads, or
 live broker integration. `backend/Dockerfile` is a placeholder that runs `top`;

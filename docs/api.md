@@ -13,6 +13,9 @@ The current API has no authentication.
 
 The frontend uses `/api/strategies`. Its development proxy removes `/api` before
 forwarding the request; the backend routes themselves have no `/api` prefix.
+Production deployment assumes the same mapping through a same-origin reverse
+proxy, most likely Nginx. See the
+[deployment assumptions](architecture.md#deployment-assumptions).
 
 ## Strategy catalogue
 

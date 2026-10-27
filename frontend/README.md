@@ -40,9 +40,11 @@ npm run build
 ```
 
 This runs TypeScript checks and writes the production bundle to `dist/`.
-Production hosting must route `/api/*` to the backend with the `/api` prefix
-removed, alongside serving the frontend assets. The development proxy is not
-included in the static bundle.
+Production deployment assumes a reverse proxy, most likely Nginx, serving the
+frontend assets and routing same-origin `/api/*` requests to the backend with
+the `/api` prefix removed. The proxy choice remains open; see the
+[deployment assumptions](../docs/architecture.md#deployment-assumptions).
+The development proxy is not included in the static bundle.
 
 Run `npm run lint` for Oxlint checks. There is no frontend automated test script
 yet. See the [development guide](../docs/development.md) for integration checks

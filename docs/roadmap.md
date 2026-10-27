@@ -4,6 +4,10 @@ This document separates implemented behavior from planned work. Phases express
 development order, with no release dates committed. The current milestone is
 the single-asset MVP.
 
+The intended product scope is a platform for researching, sharing, creating, and
+testing algorithmic trading strategies. The phases below build toward that
+scope; creation and sharing are not yet implemented.
+
 ## Implemented
 
 - FastAPI application with health, strategy catalogue, and backtest endpoints.
