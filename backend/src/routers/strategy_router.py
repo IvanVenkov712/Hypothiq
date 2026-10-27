@@ -9,4 +9,5 @@ strategies_router = APIRouter(prefix="/strategies", tags=["strategies"])
 
 @strategies_router.get("", response_model=list[StrategyDefinition])
 def list_strategies() -> list[StrategyDefinition]:
+    """Expose registered defaults and metadata without running strategies."""
     return get_strategy_catalog()

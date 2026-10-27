@@ -4,6 +4,12 @@ from backtrader.indicators import SmoothedMovingAverage
 
 
 class RSIStrategy(bt.Strategy):
+    """Buy below the lower RSI threshold and close above the upper threshold.
+
+    Safe division handles windows with no losses or no price changes, keeping
+    monotonic and flat historical series usable.
+    """
+
     params = dict(
         lower=30,
         upper=70,

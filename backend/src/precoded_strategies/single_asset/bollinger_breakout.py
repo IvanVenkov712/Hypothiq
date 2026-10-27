@@ -68,6 +68,14 @@ def quantile(values, q):
 
 
 class BollingerBreakout(bt.Strategy):
+    """Trade an expanding outer-band cross after a confirmed prior squeeze.
+
+    Allow at most one pending order, with optional short entries. Exits use
+    middle-band failure, optional contraction, or an adverse closing-price
+    threshold; orders normally fill at the following open. See the module
+    docstring for warm-up, sizing, and signal-history assumptions.
+    """
+
     params = dict(
         period=20,
         devfactor=2.0,

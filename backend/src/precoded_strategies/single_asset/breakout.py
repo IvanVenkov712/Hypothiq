@@ -2,6 +2,12 @@ import backtrader as bt
 import backtrader.indicators as btind
 
 class DonchianBreakout(bt.Strategy):
+    """Buy above prior highs and close below prior lows using separate windows.
+
+    Channel inputs exclude the current bar so the signal compares its close
+    against an already established range.
+    """
+
     params = dict(
         entry_period=20,
         exit_period=10
@@ -20,6 +26,12 @@ class DonchianBreakout(bt.Strategy):
             self.close()
 
 class SimpleBollingerBandsBreakout(bt.Strategy):
+    """Buy above the upper band and sell below the lower band on every signal.
+
+    Orders are not gated by position or pending-order state. Repeated signals
+    can accumulate exposure, and sells can open shorts rather than just exit.
+    """
+
     params = dict(
         period=20,
         devfactor=2,

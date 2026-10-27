@@ -2,6 +2,8 @@ import backtrader as bt
 import backtrader.indicators as btind
 
 class MeanReversion(bt.Strategy):
+    """Buy below multiplier times the moving average; close at or above it."""
+
     params = dict(
         multiplier=0.95,
         period=20,

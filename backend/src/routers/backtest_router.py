@@ -12,6 +12,7 @@ backtests_router = fastapi.APIRouter(
 
 @backtests_router.post("/run-backtest", response_model=BacktestResponse)
 def run_backtest(request: BacktestRequest) -> BacktestResponse:
+    """Wait for execution and map service ValueErrors to HTTP 400 responses."""
     try:
         return run_backtest_by_request(request)
 

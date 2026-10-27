@@ -1,128 +1,90 @@
 # Hypothiq
 
-Hypothiq runs Backtrader strategies against historical prices downloaded through
-`yfinance`. Backtests accept a `BacktestRequest` through
-`services.backtest_service.run_backtest_by_request` or the HTTP endpoint
-`POST /backtests/run-backtest`.
+Hypothiq is a web application for researching algorithmic trading strategies on
+historical market data. Its Python API runs predefined Backtrader strategies
+against Yahoo Finance prices and returns performance metrics. The React interface
+currently provides a searchable strategy catalogue with parameter details.
 
-Use the project virtual environment from the repository root (PowerShell):
+The project is partway through its first MVP. Running backtests is available
+through the API; the browser backtest form and results visualizations are the
+next major steps. Hypothiq focuses on research, with no live trading integration.
+
+## What works today
+
+- Browse and search the live strategy catalogue, expand parameter definitions,
+  and inspect defaults, suggested values, nullability, and published bounds.
+- Run a single-asset backtest through FastAPI using historical OHLCV data
+  downloaded with `yfinance`.
+- Choose a registered strategy and Backtrader position sizer; apply initial cash,
+  commissions, and percentage or fixed slippage.
+- Receive starting and ending cash, ending portfolio value, total return,
+  annualized return, Sharpe ratio, closed-trade count, and maximum drawdown.
+- Run backend tests without contacting Yahoo Finance.
+
+The seven registered strategies are `BuyAndHold`, `MACrossOver`,
+`MeanReversion`, `RSIStrategy`, `DonchianBreakout`,
+`SimpleBollingerBandsBreakout`, and `BollingerBreakout`.
+
+## Install and run locally
+
+Use Python 3.13 and Node.js 24 with npm as a development baseline. Backend
+dependencies are declared in `backend/pyproject.toml`; the frontend uses
+`frontend/package-lock.json`. Internet access is needed to install dependencies
+and download prices for a backtest. Browsing the catalogue does not download prices.
+
+The following commands use PowerShell. From the repository root, install and
+start the backend:
 
 ```powershell
+cd backend
 python -m venv .venv
-.venv/Scripts/python.exe -m pip install ".[test]"
-$env:PYTHONPATH = "src"
+.\.venv\Scripts\python.exe -m pip install ".[test]" uvicorn
+.\.venv\Scripts\python.exe -m uvicorn main:app --app-dir src --reload
 ```
 
-For a YAML configuration, save the following as `config.yaml`. Strategy, sizer,
-and indicator names are exact and case-sensitive:
-
-```yaml
-strategy:
-  name: MACrossOver
-  params:
-    fast: 10
-    slow: 30
-    movav: ExponentialMovingAverage
-sizer:
-  name: FixedSize
-  params:
-    stake: 5
-data_request:
-  ticker: AAPL
-  start: "2024-01-01"
-  end: "2025-01-01"
-  interval: 1d
-broker:
-  cash: 10000
-```
-
-Load and validate the configuration before running a backtest:
-
-```python
-from config import read_file_config
-from dto.backtest_request import BacktestRequest
-from services.backtest_service import run_backtest_by_request
-
-request = BacktestRequest.model_validate(read_file_config("config.yaml"))
-result = run_backtest_by_request(request)
-print(result.model_dump_json(indent=2))
-```
-
-JSON configuration files are also supported. The same request structure can be
-sent as a JSON body to the HTTP endpoint. To serve the API, install the optional
-ASGI server and start it from the repository root:
+In a second terminal, start the frontend from the repository root:
 
 ```powershell
-.venv/Scripts/python.exe -m pip install uvicorn
-.venv/Scripts/python.exe -m uvicorn main:app --app-dir src
+cd frontend
+npm ci
+npm run dev
 ```
 
-Interactive API documentation is available at `http://127.0.0.1:8000/docs`.
+Open the URL printed by Vite, normally <http://localhost:5173>. The API listens
+at <http://127.0.0.1:8000>; interactive API documentation is at
+<http://127.0.0.1:8000/docs>. Use `POST /backtests/run-backtest` there to run a
+backtest. `GET /health` should return `{"status":"ok"}`.
 
-`GET /strategies` returns registered strategies with descriptions and parameter
-definitions for building a configuration form. Each strategy has a `class_name`
-registry identifier (for example, `MACrossOver`) and a display `name` (for example,
-`Moving average crossover`). Submit `class_name` as `strategy.name` in the existing
-backtest request. A newly registered strategy without a display name uses its
-class name as the display fallback.
-Parameter names and defaults come directly from the strategy classes through the
-registry; types are inferred from defaults.
-The catalogue adds metadata only where needed, such as numeric type overrides,
-descriptions, existing BollingerBreakout bounds, and nullable `stop_loss`.
-Labels are generated from parameter names unless explicitly supplied.
-Class-valued indicator defaults are returned as names accepted by the registry.
-Moving-average `choices` are suggested form options, not an exhaustive list of
-accepted names or aliases. This read-only endpoint does not change execution
-validation, instantiate strategies, or download market data.
+On macOS/Linux, use `.venv/bin/python` in place of
+`.\.venv\Scripts\python.exe`. No database, account setup, or API key is currently
+required. See [development](docs/development.md) for checks and troubleshooting.
 
-Python callers can use `strategy_catalog.get_strategy_catalog()` to retrieve the
-same typed definitions. New registered strategies are discovered automatically;
-defaults such as `None` that cannot identify a value type need an explicit type
-in the catalogue's parameter metadata. Catalogue descriptions and bounds are
-descriptive; they do not introduce new backtest validation rules.
+## Architecture
 
-Requests use one `data_request.ticker` symbol. `strategy` and `data_request` are
-required; `broker` and `sizer` have defaults. Starting cash must be positive.
-Yahoo's download end date is exclusive.
+The React/TypeScript frontend calls a FastAPI backend. A strategy registry and
+catalogue provide strategy identities and parameter metadata. The backtest
+service downloads prices, creates a fresh Backtrader engine for each request,
+applies broker settings, and maps analyzer output to a JSON response.
 
-Results include starting cash, ending cash, ending portfolio value, total return,
-annualized return (`CAGR`), Sharpe ratio, closed trades, and maximum drawdown.
-Returns and drawdown are percentages; Sharpe can be `null` when undefined.
+Backtests run synchronously in the API process. Results are returned to the
+caller without persistent storage. See [architecture](docs/architecture.md) for
+the component diagram, request flows, and current limitations.
 
-The supported strategy names are `BuyAndHold`,
-`MACrossOver`, `MeanReversion`, `RSIStrategy`, `DonchianBreakout`,
-`SimpleBollingerBandsBreakout`, and `BollingerBreakout`. Sizers and indicators
-use names exported by `backtrader.sizers` and `backtrader.indicators`, including
-indicator aliases such as `SMA` and `EMA`. Names are not module paths.
+## Plans and next features
 
-`registry.resolve_params(cls, overrides=None)` returns a new dictionary containing
-the class's declared defaults (including inherited parameters) and supplied
-overrides. The backtest service uses it for strategy and sizer parameters.
-Unknown parameter names and unknown class names raise `ValueError` before data
-is downloaded.
+The immediate goal is to complete the single-asset MVP: add a backtest form,
+strengthen input and market-data validation, return equity and trade histories,
+and display results with charts and a benchmark. Later phases cover strategy
+comparison, multi-asset portfolios, accounts and strategy sharing, and AI-assisted
+strategy generation. See the [roadmap](docs/roadmap.md) for completed work and
+completion criteria.
 
-A parameter whose default is a Backtrader strategy, sizer, or indicator class
-accepts a name from the corresponding category. Python callers can also supply
-the class itself. Ordinary values, including strings and `None`, are preserved;
-numeric ranges and other domain constraints remain the component's responsibility.
-The resolver does not instantiate classes or mutate the supplied dictionary or
-class defaults. Use it directly when constructing indicators:
+## Documentation
 
-```python
-from registry import indicator_by_name, resolve_params
+- [Architecture](docs/architecture.md): components, boundaries, and execution flow.
+- [Development](docs/development.md): workflow, checks, builds, and strategy additions.
+- [HTTP API](docs/api.md): endpoints, an example request, result units, and errors.
+- [Roadmap](docs/roadmap.md): current status and future phases.
+- [Frontend](frontend/README.md): catalogue behavior and frontend commands.
 
-indicator = indicator_by_name("BollingerBands")
-params = resolve_params(indicator, {"period": 10, "movav": "EMA"})
-# Inside a strategy's __init__:
-bands = indicator(self.data, **params)
-```
-
-Run the tests from the repository root with the project virtual environment
-(PowerShell):
-
-```powershell
-.venv/Scripts/python.exe -m pip install pytest
-.venv/Scripts/python.exe -m pytest
-```
-
-Tests mock market-data downloads and do not require Yahoo access.
+The project is distributed under the [MIT license](LICENSE).

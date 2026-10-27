@@ -1,3 +1,5 @@
+"""Acquire historical feeds and orchestrate one Backtrader run per request."""
+
 from datetime import datetime
 from pathlib import Path
 
@@ -11,6 +13,12 @@ from dto.backtest_response import BacktestResponse
 from registry import resolve_params, strategy_by_name, sizer_by_name
 
 def get_data_y_finance(request: DataRequest):
+    """Download one ticker's OHLCV data and wrap it in a date-filtered feed.
+
+    Yahoo treats the download end date as exclusive. Provider adjustment
+    defaults are left unchanged. Raise ValueError for a missing or empty
+    download; other provider failures propagate to the caller.
+    """
     df = yf.download(
         tickers=request.ticker,
         interval=request.interval,
@@ -33,6 +41,11 @@ def get_data_y_finance(request: DataRequest):
     return data
 
 def get_data(fromdate: datetime | None = None, todate: datetime | None = None):
+    """Load the bundled AAPL CSV independently of the working directory.
+
+    Optional dates filter the Backtrader feed. This local sample helper is
+    separate from the HTTP backtest flow, which downloads prices from Yahoo.
+    """
     df = pd.read_csv(Path(__file__).resolve().parents[2] / 'data' / 'AAPL.csv')
     df["date"] = pd.to_datetime(df["date"])
     df.set_index("date", inplace=True)
@@ -44,6 +57,17 @@ def get_data(fromdate: datetime | None = None, todate: datetime | None = None):
     return data
 
 def run_backtest_by_request(request: BacktestRequest) -> BacktestResponse:
+    """Run a single-asset simulation synchronously and return summary metrics.
+
+    Resolve strategy and sizer names before downloading data. Each call owns a
+    fresh engine and leaves the request unchanged. Percentage slippage takes
+    precedence when both slippage modes are supplied.
+
+    Returns and drawdown are percentages; Sharpe may be undefined. Final
+    portfolio value includes open positions without forced liquidation. No
+    equity/trade history is returned or persisted. Resolution and strategy
+    ValueErrors propagate for the HTTP layer to translate.
+    """
     strategy = strategy_by_name(request.strategy.name)
     strategy_params = resolve_params(strategy, request.strategy.params)
     sizer = sizer_by_name(request.sizer.name)

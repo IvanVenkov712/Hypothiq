@@ -1,4 +1,5 @@
 export interface ParameterDefinition {
+  // Bounds and choices describe the form; execution validation belongs to the backend.
   name: string
   label: string
   description: string
@@ -13,12 +14,17 @@ export interface ParameterDefinition {
 }
 
 export interface StrategyDefinition {
+  /** Exact registry identifier used as strategy.name when requesting a backtest. */
   class_name: string
   name: string
   description: string
   parameters: ParameterDefinition[]
 }
 
+/**
+ * Fetch catalogue metadata through the same-origin API proxy.
+ * The caller owns cancellation; HTTP failures and aborted requests reject.
+ */
 export async function fetchStrategyCatalog(signal: AbortSignal): Promise<StrategyDefinition[]> {
   const response = await fetch('/api/strategies', {
     signal,

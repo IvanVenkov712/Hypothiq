@@ -2,6 +2,12 @@ import backtrader as bt
 import backtrader.indicators as btind
 
 class MACrossOver(bt.Strategy):
+    """Enter long on a fast/slow average cross up and close on a cross down.
+
+    The movav parameter is a Backtrader indicator class resolved by the registry
+    when supplied by name through the API.
+    """
+
     params = dict(
         slow=50,
         fast=20,

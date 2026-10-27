@@ -4,6 +4,8 @@ from pydantic import BaseModel, Field
 
 
 class ParameterDefinition(BaseModel):
+    """Form metadata whose suggestions and bounds do not add execution rules."""
+
     name: str
     label: str
     description: str = ""
@@ -21,6 +23,8 @@ class ParameterDefinition(BaseModel):
 
 
 class StrategyDefinition(BaseModel):
+    """Separate the executable class_name from its human-readable display name."""
+
     class_name: str = Field(description="Registry identifier to submit as strategy.name in a backtest request.")
     name: str = Field(description="Human-readable strategy name for display.")
     description: str
