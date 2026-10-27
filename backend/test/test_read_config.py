@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from config.read_config import (
+from config import (
     read_file_config,
     read_json_file_config,
     read_yaml_file_config,

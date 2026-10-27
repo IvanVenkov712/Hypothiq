@@ -39,7 +39,7 @@ broker:
 Load and validate the configuration before running a backtest:
 
 ```python
-from config.read_config import read_file_config
+from config import read_file_config
 from dto.backtest_request import BacktestRequest
 from services.backtest_service import run_backtest_by_request
 
