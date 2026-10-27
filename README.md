@@ -58,6 +58,24 @@ ASGI server and start it from the repository root:
 ```
 
 Interactive API documentation is available at `http://127.0.0.1:8000/docs`.
+
+`GET /strategies` returns registered strategies with descriptions and parameter
+definitions for building a configuration form. Names and defaults come directly
+from the strategy classes through the registry; types are inferred from defaults.
+The catalogue adds metadata only where needed, such as numeric type overrides,
+descriptions, existing BollingerBreakout bounds, and nullable `stop_loss`.
+Labels are generated from parameter names unless explicitly supplied.
+Class-valued indicator defaults are returned as names accepted by the registry.
+Moving-average `choices` are suggested form options, not an exhaustive list of
+accepted names or aliases. This read-only endpoint does not change execution
+validation, instantiate strategies, or download market data.
+
+Python callers can use `strategy_catalog.get_strategy_catalog()` to retrieve the
+same typed definitions. New registered strategies are discovered automatically;
+defaults such as `None` that cannot identify a value type need an explicit type
+in the catalogue's parameter metadata. Catalogue descriptions and bounds are
+descriptive; they do not introduce new backtest validation rules.
+
 Requests use one `data_request.ticker` symbol. `strategy` and `data_request` are
 required; `broker` and `sizer` have defaults. Starting cash must be positive.
 Yahoo's download end date is exclusive.

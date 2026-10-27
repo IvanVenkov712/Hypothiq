@@ -23,11 +23,9 @@ When implementing a feature:
 
 6. Add tests for the new behavior, including meaningful edge cases.
 
-7. When the feature is complete, create a PR with a meaningful title and description.
+7. DO NOT merge PRs on your own.
 
-8. DO NOT merge PRs on your own.
-
-9. DO NOT commit or push directly to `main`.
+8. DO NOT commit or push directly to `main`.
 
 ## Testing
 

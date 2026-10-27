@@ -29,6 +29,11 @@ _STRATEGIES = {
 }
 
 
+def registered_strategies() -> tuple[type[bt.Strategy], ...]:
+    """Return registered strategy classes without exposing the mutable registry."""
+    return tuple(_STRATEGIES.values())
+
+
 def _class_by_name(name: str, namespace: dict[str, Any], base: type) -> type:
     if not isinstance(name, str) or not name:
         raise ValueError(f"{base.__name__} name must be a non-empty string")
