@@ -8,6 +8,17 @@ from dto.strategy_response import ParameterDefinition, StrategyDefinition
 from registry import registered_strategies, resolve_params
 
 
+_DISPLAY_NAMES = {
+    "BuyAndHold": "Buy and hold",
+    "MACrossOver": "Moving average crossover",
+    "MeanReversion": "Mean reversion",
+    "RSIStrategy": "RSI strategy",
+    "DonchianBreakout": "Donchian breakout",
+    "SimpleBollingerBandsBreakout": "Simple Bollinger bands breakout",
+    "BollingerBreakout": "Bollinger squeeze breakout",
+}
+
+
 _DESCRIPTIONS = {
     "BuyAndHold": "Buys once at the first eligible bar and holds the position.",
     "MACrossOver": (
@@ -106,7 +117,8 @@ def get_strategy_catalog() -> list[StrategyDefinition]:
                 )
             parameters.append(ParameterDefinition(**definition))
         strategies.append(StrategyDefinition(
-            name=strategy.__name__,
+            class_name=strategy.__name__,
+            name=_DISPLAY_NAMES.get(strategy.__name__, strategy.__name__),
             description=_DESCRIPTIONS.get(strategy.__name__, strategy.__doc__ or ""),
             parameters=parameters,
         ))

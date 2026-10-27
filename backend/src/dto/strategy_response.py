@@ -21,6 +21,7 @@ class ParameterDefinition(BaseModel):
 
 
 class StrategyDefinition(BaseModel):
-    name: str
+    class_name: str = Field(description="Registry identifier to submit as strategy.name in a backtest request.")
+    name: str = Field(description="Human-readable strategy name for display.")
     description: str
     parameters: list[ParameterDefinition]

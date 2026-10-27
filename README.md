@@ -60,8 +60,13 @@ ASGI server and start it from the repository root:
 Interactive API documentation is available at `http://127.0.0.1:8000/docs`.
 
 `GET /strategies` returns registered strategies with descriptions and parameter
-definitions for building a configuration form. Names and defaults come directly
-from the strategy classes through the registry; types are inferred from defaults.
+definitions for building a configuration form. Each strategy has a `class_name`
+registry identifier (for example, `MACrossOver`) and a display `name` (for example,
+`Moving average crossover`). Submit `class_name` as `strategy.name` in the existing
+backtest request. A newly registered strategy without a display name uses its
+class name as the display fallback.
+Parameter names and defaults come directly from the strategy classes through the
+registry; types are inferred from defaults.
 The catalogue adds metadata only where needed, such as numeric type overrides,
 descriptions, existing BollingerBreakout bounds, and nullable `stop_loss`.
 Labels are generated from parameter names unless explicitly supplied.

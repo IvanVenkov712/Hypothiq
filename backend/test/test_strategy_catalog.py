@@ -16,12 +16,13 @@ from strategy_catalog import get_strategy_catalog
 def test_catalog_covers_registered_strategies_and_declared_defaults():
     definitions = get_strategy_catalog()
 
-    assert {item.name for item in definitions} == {
+    assert {item.class_name for item in definitions} == {
         strategy.__name__ for strategy in registered_strategies()
     }
     for definition in definitions:
-        strategy = strategy_by_name(definition.name)
+        strategy = strategy_by_name(definition.class_name)
         defaults = resolve_params(strategy)
+        assert definition.name
         assert definition.description
         assert [parameter.name for parameter in definition.parameters] == list(defaults)
         submitted = {parameter.name: parameter.default for parameter in definition.parameters}
@@ -35,8 +36,17 @@ def test_catalog_covers_registered_strategies_and_declared_defaults():
 
 
 def test_buy_and_hold_has_no_parameters():
-    definition = next(item for item in get_strategy_catalog() if item.name == "BuyAndHold")
+    definition = next(item for item in get_strategy_catalog() if item.class_name == "BuyAndHold")
     assert definition.parameters == []
+
+
+def test_display_name_is_distinct_from_the_executable_class_name():
+    definition = next(item for item in get_strategy_catalog() if item.class_name == "MACrossOver")
+
+    payload = json.loads(definition.model_dump_json())
+    assert payload["class_name"] == "MACrossOver"
+    assert payload["name"] == "Moving average crossover"
+    assert strategy_by_name(payload["class_name"]) is MACrossOver
 
 
 def test_catalog_reflects_updated_strategy_declarations(monkeypatch):
@@ -64,10 +74,11 @@ def test_new_strategies_and_inherited_parameters_are_discovered_without_metadata
             raise AssertionError("Catalogue discovery must not instantiate strategies")
 
     monkeypatch.setitem(registry._STRATEGIES, "Child", Child)
-    definition = next(item for item in get_strategy_catalog() if item.name == "Child")
+    definition = next(item for item in get_strategy_catalog() if item.class_name == "Child")
     parameters = {parameter.name: parameter for parameter in definition.parameters}
 
     assert definition.description == Child.__doc__
+    assert definition.name == "Child"
     assert parameters["period"].default == 20
     assert parameters["period"].type == "integer"
     assert parameters["enabled"].type == "boolean"
@@ -80,7 +91,7 @@ def test_new_strategies_and_inherited_parameters_are_discovered_without_metadata
 
 def test_explicit_numeric_type_can_override_an_integer_default():
     definition = next(
-        item for item in get_strategy_catalog() if item.name == "SimpleBollingerBandsBreakout"
+        item for item in get_strategy_catalog() if item.class_name == "SimpleBollingerBandsBreakout"
     )
     parameter = next(item for item in definition.parameters if item.name == "devfactor")
     assert parameter.default == 2
@@ -88,7 +99,7 @@ def test_explicit_numeric_type_can_override_an_integer_default():
 
 
 def test_bollinger_constraints_and_nullable_loss_threshold():
-    definition = next(item for item in get_strategy_catalog() if item.name == "BollingerBreakout")
+    definition = next(item for item in get_strategy_catalog() if item.class_name == "BollingerBreakout")
     parameters = {parameter.name: parameter for parameter in definition.parameters}
 
     assert parameters["period"].minimum == 2
@@ -114,7 +125,7 @@ def test_null_default_requires_explicit_type_metadata(monkeypatch):
     monkeypatch.setitem(strategy_catalog._PARAMETER_METADATA, "OptionalParameter", {
         "optional": {"type": "number"},
     })
-    definition = next(item for item in get_strategy_catalog() if item.name == "OptionalParameter")
+    definition = next(item for item in get_strategy_catalog() if item.class_name == "OptionalParameter")
     parameter = definition.parameters[0]
     assert parameter.default is None
     assert parameter.nullable is True
@@ -129,12 +140,12 @@ def test_metadata_only_refers_to_existing_parameters():
 
 def test_results_are_independent_and_do_not_change_strategy_defaults():
     original = resolve_params(MACrossOver)
-    first = next(item for item in get_strategy_catalog() if item.name == "MACrossOver")
+    first = next(item for item in get_strategy_catalog() if item.class_name == "MACrossOver")
     moving_average = next(item for item in first.parameters if item.name == "movav")
     moving_average.choices.clear()
     moving_average.default = "changed"
 
-    second = next(item for item in get_strategy_catalog() if item.name == "MACrossOver")
+    second = next(item for item in get_strategy_catalog() if item.class_name == "MACrossOver")
     moving_average = next(item for item in second.parameters if item.name == "movav")
     assert moving_average.default == "MovingAverageSimple"
     assert "ExponentialMovingAverage" in moving_average.choices
