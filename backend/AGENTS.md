@@ -9,27 +9,25 @@ Hypothiq is focused on trading strategies research and comparison.
 
 When implementing a feature:
 
-1. Develop each feature in a separate branch.
+1. Before implementing, inspect the relevant existing code and understand the current contracts and architecture.
 
-2. Before implementing, inspect the relevant existing code and understand the current contracts and architecture.
-
-3. If essential information is missing and it materially affects the public contract, architecture, or observable behavior, ask for clarification before implementing.
+2. If essential information is missing and it materially affects the public contract, architecture, or observable behavior, ask for clarification before implementing.
 
    Do not ask about implementation details that can be reasonably inferred from the existing codebase, established conventions, or the task itself.
 
-4. Keep the change focused on the requested feature. Do not perform unrelated refactors, renames, formatting sweeps, or cleanup unless they are required by the feature.
+3. Keep the change focused on the requested feature. Do not perform unrelated refactors, renames, formatting sweeps, or cleanup unless they are required by the feature.
 
-5. For cross-cutting changes affecting multiple components or responsibilities, work incrementally in coherent batches and explain what changed and why.
+4. For cross-cutting changes affecting multiple components or responsibilities, work incrementally in coherent batches and explain what changed and why.
 
-6. Verify that the clean-code requirements below still hold.
+5. Verify that the clean-code requirements below still hold.
 
-7. Add tests for the new behavior, including meaningful edge cases.
+6. Add tests for the new behavior, including meaningful edge cases.
 
-8. When the feature is complete, create a PR with a meaningful title and description.
+7. When the feature is complete, create a PR with a meaningful title and description.
 
-9. DO NOT merge PRs on your own.
+8. DO NOT merge PRs on your own.
 
-10. DO NOT commit or push directly to `main`.
+9. DO NOT commit or push directly to `main`.
 
 ## Testing
 
