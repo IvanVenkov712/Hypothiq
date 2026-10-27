@@ -4,10 +4,10 @@ from datetime import datetime
 from pathlib import Path
 
 import backtrader as bt
-import backtrader.analyzers as btanalyzers
 import pandas as pd
 import yfinance as yf
 
+from analyzers.backtest_result import BacktestResult
 from dto.backtest_request import BacktestRequest, DataRequest
 from dto.backtest_response import BacktestResponse
 from services.registry import resolve_params, strategy_by_name, sizer_by_name
@@ -92,26 +92,19 @@ def run_backtest_by_request(request: BacktestRequest) -> BacktestResponse:
 
     cerebro.broker.setcommission(**request.broker.commission.model_dump())
 
-    cerebro.addanalyzer(btanalyzers.Returns, _name='returns')
-    cerebro.addanalyzer(
-        btanalyzers.SharpeRatio,
-        _name="sharpe",
-        timeframe=bt.TimeFrame.Days,
-        annualize=True,
-        riskfreerate=0.0,
-    )
-    cerebro.addanalyzer(btanalyzers.TradeAnalyzer, _name='trades')
-    cerebro.addanalyzer(btanalyzers.DrawDown, _name='drawdown')
+    cerebro.addanalyzer(BacktestResult, _name="results")
 
     strats = cerebro.run()
     strat = strats[0]
+    analysis = strat.analyzers.results.get_analysis()
     return BacktestResponse(
-        start_cash=cash,
-        end_cash=cerebro.broker.get_cash(),
-        end_value=cerebro.broker.get_value(),
-        total_return=100 * (cerebro.broker.get_value() / cash - 1),
-        CAGR=strat.analyzers.returns.get_analysis()['rnorm100'],
-        sharpe=strat.analyzers.sharpe.get_analysis()['sharperatio'],
-        closed_trades=strat.analyzers.trades.get_analysis().get('total', {}).get('closed', 0),
-        max_drawdown=strat.analyzers.drawdown.get_analysis().max.drawdown,
+        start_cash=analysis["start_cash"],
+        end_cash=analysis["end_cash"],
+        end_value=analysis["end_value"],
+        total_return=analysis["total_return"],
+        CAGR=analysis["CAGR"],
+        sharpe=analysis["sharpe"],
+        closed_trades=analysis["closed_trades"],
+        max_drawdown=analysis["max_drawdown"],
+        history=analysis["history"]
     )

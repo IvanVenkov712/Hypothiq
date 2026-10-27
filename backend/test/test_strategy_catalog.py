@@ -5,12 +5,12 @@ from unittest.mock import patch
 import backtrader as bt
 import pytest
 
-import registry
-import strategy_catalog
+import services.registry as registry
+import services.strategy_catalog as strategy_catalog
 from main import app
 from precoded_strategies.single_asset.ma_cross import MACrossOver
-from registry import registered_strategies, resolve_params, strategy_by_name
-from strategy_catalog import get_strategy_catalog
+from services.registry import registered_strategies, resolve_params, strategy_by_name
+from services.strategy_catalog import get_strategy_catalog
 
 
 def test_catalog_covers_registered_strategies_and_declared_defaults():

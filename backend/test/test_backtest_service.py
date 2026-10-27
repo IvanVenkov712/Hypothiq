@@ -78,6 +78,15 @@ def test_defaults_and_no_trades_allow_undefined_sharpe(frame, data_request):
     assert result == BacktestResponse(
         start_cash=10000, end_cash=10000, end_value=10000,
         total_return=0, CAGR=0, sharpe=None, closed_trades=0, max_drawdown=0,
+        history=[
+            {
+                'time': timestamp.isoformat(),
+                'cash': 10000,
+                'equity': 10000,
+                'drawdown': 0,
+            }
+            for timestamp in frame.index
+        ],
     )
 
 

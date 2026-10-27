@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel
 
 
@@ -17,3 +19,4 @@ class BacktestResponse(BaseModel):
     sharpe: float | None
     closed_trades: float
     max_drawdown: float
+    history: list[dict[str, Any]]
