@@ -10,7 +10,7 @@ import yfinance as yf
 
 from dto.backtest_request import BacktestRequest, DataRequest
 from dto.backtest_response import BacktestResponse
-from registry import resolve_params, strategy_by_name, sizer_by_name
+from services.registry import resolve_params, strategy_by_name, sizer_by_name
 
 def get_data_y_finance(request: DataRequest):
     """Download one ticker's OHLCV data and wrap it in a date-filtered feed.

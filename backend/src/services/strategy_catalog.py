@@ -6,7 +6,7 @@ from typing import Any
 import backtrader as bt
 
 from dto.strategy_response import ParameterDefinition, StrategyDefinition
-from registry import registered_strategies, resolve_params
+from services.registry import registered_strategies, resolve_params
 
 
 _DISPLAY_NAMES = {

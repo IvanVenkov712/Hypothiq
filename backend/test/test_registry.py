@@ -3,7 +3,7 @@ import pytest
 
 from precoded_strategies.single_asset.buy_and_hold import BuyAndHold
 from precoded_strategies.single_asset.ma_cross import MACrossOver
-from registry import indicator_by_name, resolve_params, sizer_by_name, strategy_by_name
+from services.registry import indicator_by_name, resolve_params, sizer_by_name, strategy_by_name
 
 
 class ParentStrategy(bt.Strategy):

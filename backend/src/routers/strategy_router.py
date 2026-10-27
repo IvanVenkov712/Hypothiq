@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from dto.strategy_response import StrategyDefinition
-from strategy_catalog import get_strategy_catalog
+from services.strategy_catalog import get_strategy_catalog
 
 
 strategies_router = APIRouter(prefix="/strategies", tags=["strategies"])
