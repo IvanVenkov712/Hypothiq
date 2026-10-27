@@ -24,6 +24,10 @@ function ParameterTable({ parameters }: { parameters: ParameterDefinition[] }) {
         </thead>
         <tbody>
           {parameters.map((parameter) => {
+            const defaultChoice = parameter.choices?.find((choice) => choice.value === parameter.default)
+            const defaultLabel = defaultChoice?.label ?? (parameter.default === null
+              ? 'Not set'
+              : typeof parameter.default === 'boolean' ? (parameter.default ? 'Enabled' : 'Disabled') : String(parameter.default))
             const bounds = [
               parameter.minimum !== null ? `≥ ${parameter.minimum}` : null,
               parameter.maximum !== null ? `≤ ${parameter.maximum}` : null,
@@ -35,15 +39,15 @@ function ParameterTable({ parameters }: { parameters: ParameterDefinition[] }) {
               <tr key={parameter.name}>
                 <th scope="row">
                   <span className="parameter-label">{parameter.label}</span>
-                  <span className="parameter-type">{parameter.type}</span>
+                  <span className="parameter-type">{parameter.choices?.length ? 'Choice' : { integer: 'Whole number', number: 'Number', boolean: 'On / off', string: 'Text' }[parameter.type]}</span>
                 </th>
-                <td><code>{parameter.default === null ? 'null' : String(parameter.default)}</code></td>
+                <td><code>{defaultLabel}</code></td>
                 <td className="parameter-details">
                   {bounds.length > 0 && <p className="parameter-bounds">{bounds.join(' and ')}</p>}
-                  {parameter.nullable && <p>Accepts null</p>}
+                  {parameter.nullable && <p>Optional</p>}
                   {parameter.description && <p>{parameter.description}</p>}
                   {parameter.choices && parameter.choices.length > 0 && (
-                    <p>Suggested values: <span className="parameter-choices">{parameter.choices.join(', ')}</span></p>
+                    <p>Options: <span className="parameter-choices">{parameter.choices.map((choice) => choice.label).join(', ')}</span></p>
                   )}
                   {bounds.length === 0 && !parameter.nullable && !parameter.description && !parameter.choices?.length && (
                     <span aria-label="No additional details">—</span>

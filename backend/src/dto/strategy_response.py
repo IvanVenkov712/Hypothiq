@@ -3,6 +3,13 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+class ParameterChoice(BaseModel):
+    
+    value: str
+    label: str
+    description: str = ""
+
+
 class ParameterDefinition(BaseModel):
     """Form metadata whose suggestions and bounds do not add execution rules."""
 
@@ -12,7 +19,7 @@ class ParameterDefinition(BaseModel):
     type: Literal["integer", "number", "boolean", "string"]
     default: bool | int | float | str | None
     nullable: bool = False
-    choices: list[str] | None = Field(
+    choices: list[ParameterChoice] | None = Field(
         default=None,
         description="Suggested form choices; the execution API may accept other values.",
     )

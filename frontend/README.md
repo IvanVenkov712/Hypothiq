@@ -14,6 +14,10 @@ range (exclusive end), initial cash, fixed or percentage sizing, commission,
 and percentage or fixed slippage. It submits daily-bar backtests and displays
 summary metrics, loading feedback, and API errors. Percentage inputs use human
 units: `0.1` means 0.1%. Equity curves and trade histories are planned.
+
+Parameter labels explain their role and units. Moving-average dropdowns display
+SMA, EMA, and Wilder's smoothing with explanations, while submitting the API's
+executable choice values. The catalogue uses the same readable option labels.
 See the [project README](../README.md) for full installation instructions,
 [architecture](../docs/architecture.md) for the request flow, and
 [roadmap](../docs/roadmap.md) for implementation status.

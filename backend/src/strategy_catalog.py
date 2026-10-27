@@ -1,5 +1,6 @@
 """Describe registered strategies without instantiating them or loading market data."""
 
+import re
 from typing import Any
 
 import backtrader as bt
@@ -42,31 +43,134 @@ _DESCRIPTIONS = {
 }
 
 _MOVING_AVERAGES = (
-    "MovingAverageSimple",
-    "ExponentialMovingAverage",
-    "SmoothedMovingAverage",
+    (
+        bt.indicators.MovingAverageSimple,
+        "Simple moving average (SMA)",
+        "Gives equal weight to every value in the lookback window.",
+    ),
+    (
+        bt.indicators.ExponentialMovingAverage,
+        "Exponential moving average (EMA)",
+        "Gives more weight to recent values, responding faster to changes than an SMA of the same period.",
+    ),
+    (
+        bt.indicators.SmoothedMovingAverage,
+        "Wilder's smoothed moving average (SMMA)",
+        "Uses Wilder's smoothing, with a weight of 1 / period for each new value. This is the standard RSI smoothing method.",
+    ),
 )
+
+_COMMON_PARAMETER_METADATA: dict[str, dict[str, Any]] = {
+    "movav": {
+        "label": "Moving average method",
+        "description": "How values are averaged over the selected lookback period.",
+    },
+    "devfactor": {
+        "label": "Band width (standard deviations)",
+        "type": "number",
+        "description": "Distance from the middle band to each outer band, measured in standard deviations.",
+    },
+}
 
 # Only information that cannot be read reliably from declared defaults belongs here.
 # Bounds describe existing strategy validation; they do not add execution rules.
 _PARAMETER_METADATA: dict[str, dict[str, dict[str, Any]]] = {
+    "MACrossOver": {
+        "fast": {
+            "label": "Fast moving average period (bars)",
+            "description": "Number of bars used by the faster moving average.",
+        },
+        "slow": {
+            "label": "Slow moving average period (bars)",
+            "description": "Number of bars used by the slower moving average.",
+        },
+    },
+    "MeanReversion": {
+        "period": {
+            "label": "Moving average period (bars)",
+            "description": "Number of bars used to calculate the reference moving average.",
+        },
+        "multiplier": {
+            "label": "Entry price multiplier",
+            "description": "Buy when the close is below this multiple of the moving average. For example, 0.95 means 5% below it.",
+        },
+    },
+    "DonchianBreakout": {
+        "entry_period": {
+            "label": "Entry channel lookback (bars)",
+            "description": "Buy above the highest high of these prior bars; the current bar is excluded.",
+        },
+        "exit_period": {
+            "label": "Exit channel lookback (bars)",
+            "description": "Close below the lowest low of these prior bars; the current bar is excluded.",
+        },
+    },
     "SimpleBollingerBandsBreakout": {
-        "devfactor": {"type": "number"},
+        "period": {
+            "label": "Bollinger band period (bars)",
+            "description": "Number of bars used to calculate the middle band and price standard deviation.",
+        },
     },
     "RSIStrategy": {
-        "lower": {"label": "Lower RSI threshold", "type": "number"},
-        "upper": {"label": "Upper RSI threshold", "type": "number"},
+        "lower": {
+            "label": "RSI buy threshold",
+            "type": "number",
+            "description": "Buy when the RSI falls below this value on its 0 to 100 scale.",
+        },
+        "upper": {
+            "label": "RSI exit threshold",
+            "type": "number",
+            "description": "Close the position when the RSI rises above this value on its 0 to 100 scale.",
+        },
+        "period": {
+            "label": "RSI lookback period (bars)",
+            "description": "Number of bars used to smooth gains and losses when calculating RSI.",
+        },
+        "movav": {"description": "Smoothing method used for the RSI's average gains and losses."},
     },
     "BollingerBreakout": {
-        "period": {"minimum": 2},
+        "period": {
+            "label": "Bollinger band period (bars)",
+            "description": "Number of bars used to calculate the middle band and price standard deviation.",
+            "minimum": 2,
+        },
         "devfactor": {"exclusive_minimum": 0},
-        "squeeze_lookback": {"minimum": 2},
-        "squeeze_quantile": {"minimum": 0, "maximum": 1},
-        "squeeze_bars": {"minimum": 1},
-        "entry_window": {"minimum": 1},
-        "expansion_rate": {"exclusive_minimum": 0},
-        "contraction_bars": {"minimum": 1},
+        "squeeze_lookback": {
+            "label": "Squeeze reference window (bars)",
+            "description": "Number of prior band widths used to determine whether the current bands are unusually narrow.",
+            "minimum": 2,
+        },
+        "squeeze_quantile": {
+            "label": "Squeeze threshold (quantile)",
+            "description": "Band-width quantile from 0 to 1. For example, 0.2 identifies widths in the lowest 20% of the reference window.",
+            "minimum": 0, "maximum": 1,
+        },
+        "squeeze_bars": {
+            "label": "Squeeze confirmation (bars)",
+            "description": "Consecutive narrow-band bars required to confirm a squeeze.",
+            "minimum": 1,
+        },
+        "entry_window": {
+            "label": "Breakout entry window (bars)",
+            "description": "Number of bars after a squeeze during which a breakout can trigger an entry.",
+            "minimum": 1,
+        },
+        "expansion_rate": {
+            "label": "Minimum band expansion (fraction)",
+            "description": "Required band-width growth from the previous bar. For example, 0.05 means 5% growth.",
+            "exclusive_minimum": 0,
+        },
+        "contraction_bars": {
+            "label": "Contraction confirmation (bars)",
+            "description": "Consecutive decreases in band width required to confirm contraction.",
+            "minimum": 1,
+        },
+        "exit_on_contraction": {
+            "label": "Exit when bands contract",
+            "description": "Close the position when band contraction is confirmed.",
+        },
         "stop_loss": {
+            "label": "Closing-price loss limit (fraction)",
             "nullable": True,
             "exclusive_minimum": 0,
             "exclusive_maximum": 1,
@@ -74,6 +178,18 @@ _PARAMETER_METADATA: dict[str, dict[str, dict[str, Any]]] = {
                 "Adverse closing-price fraction relative to the average fill; "
                 "0.05 means 5%. Null disables this exit. This is not a resting stop order."
             ),
+        },
+        "allow_short": {
+            "label": "Allow short selling",
+            "description": "Allow short entries on downward breakouts. When disabled, the strategy only opens long positions.",
+        },
+        "record_history": {
+            "label": "Record indicator history",
+            "description": "Keep per-bar indicator and signal history during the run. This history is not included in the current results response.",
+        },
+        "printlog": {
+            "label": "Log order events",
+            "description": "Write order status changes to the server log during the run.",
         },
     },
 }
@@ -99,9 +215,20 @@ def get_strategy_catalog() -> list[StrategyDefinition]:
             if isinstance(default, type) and issubclass(default, bt.Indicator):
                 definition.update(type="string", default=default.__name__)
                 if name == "movav":
-                    definition["choices"] = list(dict.fromkeys(
-                        (default.__name__, *_MOVING_AVERAGES)
-                    ))
+                    choices = [
+                        {
+                            "value": default.__name__ if issubclass(default, indicator) else indicator.__name__,
+                            "label": label,
+                            "description": description,
+                        }
+                        for indicator, label, description in _MOVING_AVERAGES
+                    ]
+                    if not any(choice["value"] == default.__name__ for choice in choices):
+                        choices.insert(0, {
+                            "value": default.__name__,
+                            "label": re.sub(r"(?<=[a-z])(?=[A-Z])", " ", default.__name__),
+                        })
+                    definition["choices"] = choices
             elif isinstance(default, bool):
                 definition["type"] = "boolean"
             elif isinstance(default, int):
@@ -110,6 +237,7 @@ def get_strategy_catalog() -> list[StrategyDefinition]:
                 definition["type"] = "number"
             elif isinstance(default, str):
                 definition["type"] = "string"
+            definition.update(_COMMON_PARAMETER_METADATA.get(name, {}))
             definition.update(metadata.get(name, {}))
             if "type" not in definition:
                 raise ValueError(

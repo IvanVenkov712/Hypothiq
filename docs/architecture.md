@@ -64,7 +64,8 @@ during local development.
 2. The router obtains registered classes without instantiating them or downloading data.
 3. The catalogue reads declared defaults, including inherited parameters. It
    infers scalar types and converts indicator classes to registry names suitable
-   for JSON. Explicit metadata supplies descriptions, bounds, type overrides,
+   for JSON. Choice objects pair these executable values with readable labels
+   and explanations. Explicit metadata supplies descriptions, bounds, type overrides,
    and types that cannot be inferred from a default such as `None`.
 4. The UI searches names, identifiers, descriptions, and parameter names/labels,
    sorts by display name, and renders the returned definitions.

@@ -30,9 +30,10 @@ def test_catalog_covers_registered_strategies_and_declared_defaults():
         for parameter in definition.parameters:
             assert parameter.label
             if parameter.choices is not None:
-                assert parameter.default in parameter.choices
+                assert parameter.default in [choice.value for choice in parameter.choices]
                 for choice in parameter.choices:
-                    resolve_params(strategy, {parameter.name: choice})
+                    assert choice.label
+                    resolve_params(strategy, {parameter.name: choice.value})
 
 
 def test_buy_and_hold_has_no_parameters():
@@ -86,7 +87,9 @@ def test_new_strategies_and_inherited_parameters_are_discovered_without_metadata
     assert parameters["label"].default == "EMA"
     assert parameters["ratio"].type == "number"
     assert parameters["movav"].default == "SMA"
-    assert "SMA" in parameters["movav"].choices
+    assert "SMA" in [choice.value for choice in parameters["movav"].choices]
+    assert len(parameters["movav"].choices) == 3
+    assert next(choice for choice in parameters["movav"].choices if choice.value == "SMA").label == "Simple moving average (SMA)"
 
 
 def test_explicit_numeric_type_can_override_an_integer_default():
@@ -148,8 +151,55 @@ def test_results_are_independent_and_do_not_change_strategy_defaults():
     second = next(item for item in get_strategy_catalog() if item.class_name == "MACrossOver")
     moving_average = next(item for item in second.parameters if item.name == "movav")
     assert moving_average.default == "MovingAverageSimple"
-    assert "ExponentialMovingAverage" in moving_average.choices
+    assert "ExponentialMovingAverage" in [choice.value for choice in moving_average.choices]
     assert resolve_params(MACrossOver) == original
+
+
+@pytest.mark.parametrize("strategy_name", [
+    "MACrossOver", "MeanReversion", "RSIStrategy", "SimpleBollingerBandsBreakout",
+])
+def test_moving_average_options_have_readable_labels_and_executable_values(strategy_name):
+    strategy = strategy_by_name(strategy_name)
+    definition = next(item for item in get_strategy_catalog() if item.class_name == strategy_name)
+    parameter = next(item for item in definition.parameters if item.name == "movav")
+
+    assert parameter.label == "Moving average method"
+    assert [choice.label for choice in parameter.choices] == [
+        "Simple moving average (SMA)",
+        "Exponential moving average (EMA)",
+        "Wilder's smoothed moving average (SMMA)",
+    ]
+    assert len({choice.value for choice in parameter.choices}) == 3
+    for choice, indicator in zip(parameter.choices, (
+        bt.indicators.MovingAverageSimple,
+        bt.indicators.ExponentialMovingAverage,
+        bt.indicators.SmoothedMovingAverage,
+    )):
+        assert choice.description
+        assert resolve_params(strategy, {"movav": choice.value})["movav"] is indicator
+
+    payload = json.loads(definition.model_dump_json())
+    moving_average = next(item for item in payload["parameters"] if item["name"] == "movav")
+    assert moving_average["choices"][0]["label"] == "Simple moving average (SMA)"
+    assert moving_average["choices"][0]["value"] == "MovingAverageSimple"
+
+
+def test_registered_parameters_have_explanations_and_contextual_labels():
+    definitions = {item.class_name: item for item in get_strategy_catalog()}
+    for definition in definitions.values():
+        for parameter in definition.parameters:
+            assert parameter.description, f"{definition.class_name}.{parameter.name} needs an explanation"
+
+    expected_labels = {
+        ("MACrossOver", "fast"): "Fast moving average period (bars)",
+        ("MACrossOver", "slow"): "Slow moving average period (bars)",
+        ("RSIStrategy", "period"): "RSI lookback period (bars)",
+        ("SimpleBollingerBandsBreakout", "devfactor"): "Band width (standard deviations)",
+        ("BollingerBreakout", "printlog"): "Log order events",
+    }
+    for (strategy_name, parameter_name), label in expected_labels.items():
+        parameter = next(item for item in definitions[strategy_name].parameters if item.name == parameter_name)
+        assert parameter.label == label
 
 
 def test_get_strategies_returns_json_without_running_a_backtest():

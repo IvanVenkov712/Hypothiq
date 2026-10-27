@@ -36,7 +36,22 @@ This excerpt shows one entry; the endpoint returns all registered strategies.
 Use `class_name` when submitting `strategy.name` in a backtest. Parameter
 definitions include `name`, `label`, `description`, `type`, `default`, `nullable`,
 `choices`, and inclusive or exclusive minimum/maximum fields. Choices are
-suggested form values; other registered indicator aliases may be accepted.
+objects with `value`, `label`, and `description`. Display the label and submit
+the value; other registered indicator aliases may also be accepted by the API.
+For example, the `movav` parameter is labeled “Moving average method” and
+includes this option:
+
+```json
+{
+  "value": "MovingAverageSimple",
+  "label": "Simple moving average (SMA)",
+  "description": "Gives equal weight to every value in the lookback window."
+}
+```
+
+Options also include exponential (EMA) and Wilder's smoothed (SMMA) averages.
+`default` remains an executable value, so an existing configuration can select
+its matching option without converting a display label back into an identifier.
 Bounds describe strategy constraints and do not add API validation.
 
 ## Run a backtest

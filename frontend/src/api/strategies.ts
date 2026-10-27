@@ -1,3 +1,10 @@
+export interface ParameterChoice {
+  /** Registry value submitted to the backtesting API. */
+  value: string
+  label: string
+  description: string
+}
+
 export interface ParameterDefinition {
   // Bounds and choices describe the form; execution validation belongs to the backend.
   name: string
@@ -6,7 +13,7 @@ export interface ParameterDefinition {
   type: 'integer' | 'number' | 'boolean' | 'string'
   default: boolean | number | string | null
   nullable: boolean
-  choices: string[] | null
+  choices: ParameterChoice[] | null
   minimum: number | null
   maximum: number | null
   exclusive_minimum: number | null

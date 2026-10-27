@@ -14,34 +14,41 @@ type RunState =
 function ParameterInput({ parameter }: { parameter: ParameterDefinition }) {
   const id = `parameter-${parameter.name}`
   const numeric = parameter.type === 'integer' || parameter.type === 'number'
+  const [selectedValue, setSelectedValue] = useState(String(parameter.default ?? ''))
+  const selectedChoice = parameter.choices?.find((choice) => choice.value === selectedValue)
+  const hasHint = Boolean(parameter.description || parameter.nullable || selectedChoice?.description)
   return (
     <div className="form-field">
       <label htmlFor={id}>{parameter.label}</label>
-      {parameter.type === 'boolean' ? (
-        <select id={id} name={id} defaultValue={String(parameter.default ?? '')}>
-          {parameter.nullable && <option value="">None</option>}
-          <option value="true">True</option><option value="false">False</option>
+      {parameter.choices?.length ? (
+        <select
+          id={id} name={id} value={selectedValue} required={!parameter.nullable}
+          onChange={(event) => setSelectedValue(event.target.value)}
+          aria-describedby={hasHint ? `${id}-hint` : undefined}
+        >
+          {parameter.nullable && <option value="">Not set</option>}
+          {parameter.choices.map((choice) => <option key={choice.value} value={choice.value}>{choice.label}</option>)}
+        </select>
+      ) : parameter.type === 'boolean' ? (
+        <select id={id} name={id} defaultValue={String(parameter.default ?? '')} aria-describedby={hasHint ? `${id}-hint` : undefined}>
+          {parameter.nullable && <option value="">Not set</option>}
+          <option value="true">Enabled</option><option value="false">Disabled</option>
         </select>
       ) : (
-        <>
-          <input
-            id={id} name={id} type={numeric ? 'number' : 'text'}
-            defaultValue={parameter.default === null ? '' : String(parameter.default)}
-            required={!parameter.nullable}
-            step={parameter.type === 'integer' ? 1 : 'any'}
-            min={parameter.minimum ?? undefined} max={parameter.maximum ?? undefined}
-            list={parameter.choices?.length ? `${id}-choices` : undefined}
-            aria-describedby={parameter.description || parameter.nullable ? `${id}-hint` : undefined}
-          />
-          {parameter.choices?.length ? (
-            <datalist id={`${id}-choices`}>
-              {parameter.choices.map((choice) => <option key={choice} value={choice} />)}
-            </datalist>
-          ) : null}
-        </>
+        <input
+          id={id} name={id} type={numeric ? 'number' : 'text'}
+          defaultValue={parameter.default === null ? '' : String(parameter.default)}
+          required={!parameter.nullable}
+          step={parameter.type === 'integer' ? 1 : 'any'}
+          min={parameter.minimum ?? undefined} max={parameter.maximum ?? undefined}
+          aria-describedby={hasHint ? `${id}-hint` : undefined}
+        />
       )}
-      {(parameter.description || parameter.nullable) && (
-        <small id={`${id}-hint`}>{parameter.description} {parameter.nullable && 'Leave empty to use none.'}</small>
+      {hasHint && (
+        <small id={`${id}-hint`}>
+          {parameter.description} {selectedChoice?.description}
+          {parameter.nullable && (parameter.choices?.length || parameter.type === 'boolean' ? ' Choose Not set to disable.' : ' Leave empty to disable.')}
+        </small>
       )}
     </div>
   )
