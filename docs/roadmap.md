@@ -25,6 +25,10 @@ scope; creation and sharing are not yet implemented.
 - Home page and shared navigation to the catalogue and backtesting workspace.
 - Strategy-driven daily backtest form with ticker, dates, capital, sizing,
   commission, slippage, and aggregate results.
+- Responsive equity and drawdown charts, an initial-cash reference line, and
+  shared date inspection with pointer, keyboard, and touch input.
+- Mocked-API browser tests for chart behavior, date labels, edge cases, and
+  narrow touchscreen layouts.
 - Backend tests for registry/catalogue contracts, broker execution settings,
   data loading, result mapping, file readers, and RSI edge cases.
 
@@ -36,7 +40,7 @@ The API execution path and browser catalogue are implemented. Remaining work:
   return actionable errors for provider and engine failures.
 - Validate annualization and timeframe handling for supported intervals.
 - Expose executed trades through the API.
-- Display an equity curve and a trade list alongside browser summary metrics.
+- Display an executed-trade list alongside browser metrics and charts.
 - Add a Buy & Hold benchmark where useful.
 - Add frontend and end-to-end coverage for the complete workflow, and expand
   deterministic strategy behavior tests.

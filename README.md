@@ -8,9 +8,9 @@ against Yahoo Finance prices and returns performance metrics. The React
 interface provides a searchable strategy catalogue and a backtesting workspace.
 
 The project is partway through its first MVP. Running backtests is available
-through the API and browser, with summary metrics displayed after each run.
-Equity and trade visualizations are planned. Hypothiq focuses on research,
-with no live trading integration.
+through the API and browser, with summary metrics and interactive equity and
+drawdown charts after each run. Trade visualizations are planned. Hypothiq
+focuses on research, with no live trading integration.
 
 ## What works today
 
@@ -26,6 +26,8 @@ with no live trading integration.
   annualized return, Sharpe ratio, closed-trade count, and maximum drawdown.
 - Receive typed per-bar close, cash, equity, and drawdown history through the API,
   including indicator warm-up bars.
+- Inspect equity and drawdown charts in the browser with a shared date inspector
+  and an initial-cash reference line.
 - Run backend tests without contacting Yahoo Finance.
 
 The seven registered strategies are `BuyAndHold`, `MACrossOver`,

@@ -4,6 +4,7 @@ import { runBacktest } from './api/backtests'
 import type { BacktestRequest, BacktestResponse } from './api/backtests'
 import type { ParameterDefinition, StrategyDefinition } from './api/strategies'
 import { useStrategyCatalog } from './hooks/useStrategyCatalog'
+import BacktestCharts from './BacktestCharts'
 
 type RunState =
   | { status: 'idle' }
@@ -231,6 +232,7 @@ export default function Backtesting() {
             ].map(([label, value]) => <div className="metric" key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
           </dl>
           <p className="field-note">Final portfolio value includes open positions; closed trades count completed round trips. N/A means the metric could not be calculated.</p>
+          <BacktestCharts history={run.result.history} startCash={run.result.start_cash} />
         </section>
       )}
     </>

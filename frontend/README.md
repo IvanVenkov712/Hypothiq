@@ -12,12 +12,19 @@ on every page. A catalogue strategy's “Backtest this strategy” link preselec
 The backtesting form uses live parameter metadata and accepts a ticker, date
 range (exclusive end), initial cash, fixed or percentage sizing, commission,
 and percentage or fixed slippage. It submits daily-bar backtests and displays
-summary metrics, loading feedback, and API errors. Percentage inputs use human
-units: `0.1` means 0.1%. The typed backtest response also includes per-bar
-`time`, `close`, `cash`, `equity`, and `drawdown` history, ready for charts;
-the UI currently displays summary metrics. Equity charts and executed-trade
-histories are planned. See the [history contract](../docs/api.md#run-a-backtest)
-for timestamp handling, snapshot timing, and units.
+summary metrics, equity and drawdown charts, loading feedback, and API errors.
+Percentage inputs use human units: `0.1` means 0.1%.
+
+The responsive SVG charts share a trading-day inspector: hover or drag across
+either plot, tap on a touchscreen, or use the labeled slider with keyboard
+arrows and Home/End. Exact close, cash, equity, and drawdown values appear
+below the plots. The equity chart includes a dashed initial-cash reference;
+drawdown uses positive percentage values plotted downward from zero. Flat and
+single-bar histories remain visible. Empty history displays a message while
+keeping summary metrics. Daily labels preserve the feed's date without browser
+timezone conversion or synthetic points. Executed-trade histories are planned.
+See the [history contract](../docs/api.md#run-a-backtest) for snapshot timing
+and units. Charts use React and native SVG, with no charting dependency.
 
 Parameter labels explain their role and units. Moving-average dropdowns display
 SMA, EMA, and Wilder's smoothing with explanations, while submitting the API's
@@ -71,6 +78,14 @@ Open <http://localhost:8080>. See [deployment](../docs/deployment.md) for
 configuration and verification. `npm run preview` is only a local bundle preview;
 it does not supply the production API proxy.
 
-Run `npm run lint` for Oxlint checks. There is no frontend automated test script
-yet. See the [development guide](../docs/development.md) for integration checks
+Run `npm run lint` for Oxlint checks and `npm test` for Playwright browser tests.
+Tests start Vite on port 4173 and mock catalogue/backtest HTTP responses, so
+neither the backend nor Yahoo access is needed. Windows uses installed Microsoft
+Edge in headless mode; macOS/Linux use Playwright Chromium (install it once
+with `npx playwright install chromium`). Tests cover date inspection, pointer,
+keyboard and touch input, narrow layouts, flat/single-bar/empty histories,
+negative equity, drawdown above 100%, and reruns. Desktop and mobile screenshots
+are written to the ignored `test-results/` directory. Playwright is a development
+dependency for exercising actual SVG layout and browser interactions.
+See the [development guide](../docs/development.md) for integration checks
 and troubleshooting.

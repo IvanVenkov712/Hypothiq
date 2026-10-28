@@ -44,6 +44,7 @@ during local development.
 | `frontend/src/Home.tsx` | Platform introduction and links to catalogue and backtesting. |
 | `frontend/src/StrategyCatalog.tsx` | Catalogue search, sorting, and expandable parameter tables. |
 | `frontend/src/Backtesting.tsx` | Metadata-driven configuration, submission, and aggregate results. |
+| `frontend/src/BacktestCharts.tsx` | Responsive equity/drawdown SVG charts and shared date inspection from API history. |
 | `frontend/src/hooks/useStrategyCatalog.ts` | Cancellable catalogue loading and retry shared by both workspaces. |
 | `frontend/src/api/strategies.ts` | TypeScript response types and cancellable catalogue fetch. |
 | `frontend/src/api/backtests.ts` | Typed backtest requests/results and HTTP error handling. |

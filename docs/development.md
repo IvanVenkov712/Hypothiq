@@ -42,13 +42,21 @@ From `frontend`:
 ```powershell
 npm run lint
 npm run build
+npm test
 ```
 
 Lint uses Oxlint. The build runs TypeScript checks followed by Vite bundling.
-There is no frontend automated test script yet. For a manual integration check,
-start both servers and verify home-page navigation, catalogue loading, search,
+Playwright browser tests start Vite, mock API responses, and verify equity and
+drawdown charts with keyboard/pointer/touch input, unchanged daily labels,
+flat/single-bar/empty histories, negative equity, large drawdown, and reruns.
+Windows tests use installed Edge; on macOS/Linux first run
+`npx playwright install chromium`. No backend or price downloads are needed.
+See the [frontend guide](../frontend/README.md) for screenshots and test setup.
+For a manual integration check, start both servers and verify home-page navigation, catalogue loading, search,
 expanded parameter details, and retry after an API outage. Follow a strategy's
-backtest link, adjust inputs, and submit at `/backtesting` to inspect metrics.
+backtest link, adjust inputs, and submit at `/backtesting` to inspect metrics
+and charts. Hover over either chart or use the trading-day slider to inspect
+exact values; check that both charts display the same selected date.
 Check invalid date order and retry after a failed run. An API test run can also be submitted through
 `http://127.0.0.1:8000/docs`; this requires network access for prices.
 
