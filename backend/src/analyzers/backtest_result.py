@@ -20,6 +20,7 @@ class BacktestResult(bt.Analyzer):
     def next(self):
         self.rets["history"].append({
             "time": self.data.datetime.datetime(0).isoformat(),
+            "close": self.data.close[0],
             "cash": self.strategy.broker.getcash(),
             "equity": self.strategy.broker.getvalue(),
             "drawdown": self.drawdown.get_analysis()["drawdown"],

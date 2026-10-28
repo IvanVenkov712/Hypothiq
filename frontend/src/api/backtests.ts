@@ -10,6 +10,18 @@ export interface BacktestRequest {
   sizer: { name: 'FixedSize' | 'PercentSizer'; params: { stake: number } | { percents: number } }
 }
 
+/** End-of-bar values, including indicator warm-up bars. */
+export interface BacktestHistoryPoint {
+  /** ISO 8601 bar label without a timezone; preserve the date for daily charts. */
+  time: string
+  close: number
+  cash: number
+  /** Portfolio value including positions marked at the bar's close. */
+  equity: number
+  /** Nonnegative percentage below running peak equity; 5 means 5%. */
+  drawdown: number
+}
+
 export interface BacktestResponse {
   start_cash: number
   end_cash: number
@@ -19,6 +31,8 @@ export interface BacktestResponse {
   sharpe: number | null
   closed_trades: number
   max_drawdown: number
+  /** One point per processed bar in feed order; start_cash is the separate baseline. */
+  history: BacktestHistoryPoint[]
 }
 
 export async function runBacktest(request: BacktestRequest, signal: AbortSignal): Promise<BacktestResponse> {

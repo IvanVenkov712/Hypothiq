@@ -1,3 +1,5 @@
+import asyncio
+import json
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
@@ -8,6 +10,7 @@ import pytest
 
 from dto.backtest_request import BacktestRequest, DataRequest
 from dto.backtest_response import BacktestResponse
+from main import app
 from services.backtest_service import get_data, get_data_y_finance, run_backtest_by_request
 
 
@@ -65,7 +68,9 @@ def test_broker_settings_affect_execution(frame, data_request, slippage, executi
     assert request == original
 
 
-def test_defaults_and_no_trades_allow_undefined_sharpe(frame, data_request):
+@pytest.mark.parametrize('bars', [1, 4])
+def test_defaults_and_no_trades_allow_undefined_sharpe(frame, data_request, bars):
+    frame = frame.iloc[:bars]
     request = BacktestRequest(
         strategy={'name': 'BuyAndHold'},
         data_request=data_request,
@@ -81,13 +86,111 @@ def test_defaults_and_no_trades_allow_undefined_sharpe(frame, data_request):
         history=[
             {
                 'time': timestamp.isoformat(),
+                'close': close,
                 'cash': 10000,
                 'equity': 10000,
                 'drawdown': 0,
             }
-            for timestamp in frame.index
+            for timestamp, close in frame['close'].items()
         ],
     )
+
+
+@pytest.mark.parametrize('commission', [0, 0.01])
+def test_history_tracks_equity_drawdown_and_execution_costs(data_request, commission):
+    prices = [100, 100, 120, 90, 130, 110]
+    frame = pd.DataFrame(
+        {'open': prices, 'high': prices, 'low': prices, 'close': prices, 'volume': 100},
+        index=pd.bdate_range('2024-01-04', periods=len(prices)),
+    )
+    request = BacktestRequest(
+        strategy={'name': 'BuyAndHold'},
+        data_request=data_request.model_copy(update={
+            'start': frame.index[0].to_pydatetime(),
+            'end': (frame.index[-1] + pd.Timedelta(days=1)).to_pydatetime(),
+        }),
+        broker={'cash': 1000, 'commission': {'commission': commission}},
+        sizer={'name': 'FixedSize', 'params': {'stake': 2}},
+    )
+    with patch('services.backtest_service.get_data_y_finance', return_value=
+               bt.feeds.PandasData(dataname=frame)):
+        result = run_backtest_by_request(request)
+
+    fee = 200 * commission
+    expected_equity = [1000, 1000 - fee, 1040 - fee, 980 - fee, 1060 - fee, 1020 - fee]
+    expected_drawdown = [0, fee / 1000 * 100, 0, 60 / (1040 - fee) * 100,
+                         0, 40 / (1060 - fee) * 100]
+    assert [point.time for point in result.history] == list(frame.index.to_pydatetime())
+    assert [point.close for point in result.history] == prices
+    assert [point.cash for point in result.history] == pytest.approx([1000] + [800 - fee] * 5)
+    assert [point.equity for point in result.history] == pytest.approx(expected_equity)
+    assert [point.drawdown for point in result.history] == pytest.approx(expected_drawdown)
+    assert result.history[-1].cash == result.end_cash
+    assert result.history[-1].equity == result.end_value
+    assert max(point.drawdown for point in result.history) == pytest.approx(result.max_drawdown)
+    assert result.total_return == pytest.approx(100 * (result.history[-1].equity / result.start_cash - 1))
+    assert result.closed_trades == 0
+
+
+def test_history_includes_indicator_warmup_bars(frame, data_request):
+    request = BacktestRequest(
+        strategy={'name': 'MACrossOver', 'params': {'fast': 2, 'slow': 3}},
+        data_request=data_request,
+    )
+    with patch('services.backtest_service.get_data_y_finance', return_value=
+               bt.feeds.PandasData(dataname=frame)):
+        result = run_backtest_by_request(request)
+
+    # The crossover needs four bars; the first three must still reach the chart.
+    assert [point.time for point in result.history] == list(frame.index.to_pydatetime())
+    assert [point.close for point in result.history] == list(frame['close'])
+    assert [point.cash for point in result.history] == [result.start_cash] * len(frame)
+    assert [point.equity for point in result.history] == [result.start_cash] * len(frame)
+    assert [point.drawdown for point in result.history] == [0] * len(frame)
+
+
+def test_backtest_endpoint_returns_typed_history_as_json(frame, data_request):
+    request = BacktestRequest(
+        strategy={'name': 'BuyAndHold'},
+        data_request=data_request.model_copy(update={'end': datetime(2024, 1, 5)}),
+    )
+    messages = []
+
+    async def receive():
+        return {'type': 'http.request', 'body': request.model_dump_json().encode(),
+                'more_body': False}
+
+    async def send(message):
+        messages.append(message)
+
+    scope = {
+        'type': 'http',
+        'asgi': {'version': '3.0'},
+        'http_version': '1.1',
+        'method': 'POST',
+        'scheme': 'http',
+        'path': '/backtests/run-backtest',
+        'root_path': '',
+        'query_string': b'',
+        'headers': [(b'content-type', b'application/json')],
+    }
+    with patch('services.backtest_service.yf.download', return_value=frame):
+        asyncio.run(app(scope, receive, send))
+
+    assert messages[0]['status'] == 200
+    assert (b'content-type', b'application/json') in messages[0]['headers']
+    body = b''.join(message.get('body', b'') for message in messages[1:])
+    payload = json.loads(body)
+    assert payload['history'] == [
+        {'time': timestamp.isoformat(), 'close': close, 'cash': cash,
+         'equity': equity, 'drawdown': 0}
+        for timestamp, close, cash, equity in zip(
+            frame.index, frame['close'], [10000, 9900, 9900, 9900],
+            [10000, 10000, 10010, 10020],
+        )
+    ]
+    assert payload['history'][-1]['cash'] == payload['end_cash']
+    assert payload['history'][-1]['equity'] == payload['end_value']
 
 
 @pytest.mark.parametrize('overrides', [

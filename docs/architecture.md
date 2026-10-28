@@ -94,7 +94,10 @@ inputs are converted to fractions for commission and percentage slippage;
 4. A fresh `Cerebro` receives the feed, strategy, sizer, cash, commission, and
    slippage settings. Percentage slippage takes precedence if both modes are supplied.
 5. Backtrader runs the strategy with Returns, SharpeRatio, TradeAnalyzer, and
-   DrawDown analyzers. The service returns aggregate metrics in `BacktestResponse`.
+   DrawDown analyzers. The result analyzer captures end-of-bar close, cash,
+   equity, and drawdown, including indicator warm-up bars. The service returns
+   summary metrics and typed history points in `BacktestResponse`; see the
+   [history contract](api.md#run-a-backtest) for timing, timestamps, and units.
 6. The router maps `ValueError` to HTTP 400. Other unhandled failures propagate as
    server errors. See the [API reference](api.md) for response semantics.
 

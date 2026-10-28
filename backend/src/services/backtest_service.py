@@ -57,16 +57,17 @@ def get_data(fromdate: datetime | None = None, todate: datetime | None = None):
     return data
 
 def run_backtest_by_request(request: BacktestRequest) -> BacktestResponse:
-    """Run a single-asset simulation synchronously and return summary metrics.
+    """Run a single-asset simulation and return summary metrics and bar history.
 
     Resolve strategy and sizer names before downloading data. Each call owns a
     fresh engine and leaves the request unchanged. Percentage slippage takes
     precedence when both slippage modes are supplied.
 
     Returns and drawdown are percentages; Sharpe may be undefined. Final
-    portfolio value includes open positions without forced liquidation. No
-    equity/trade history is returned or persisted. Resolution and strategy
-    ValueErrors propagate for the HTTP layer to translate.
+    portfolio value includes open positions without forced liquidation. History
+    includes end-of-bar close, cash, equity, and drawdown during warm-up too.
+    No executed-trade list or result persistence is provided. Resolution and
+    strategy ValueErrors propagate for the HTTP layer to translate.
     """
     strategy = strategy_by_name(request.strategy.name)
     strategy_params = resolve_params(strategy, request.strategy.params)
@@ -106,5 +107,5 @@ def run_backtest_by_request(request: BacktestRequest) -> BacktestResponse:
         sharpe=analysis["sharpe"],
         closed_trades=analysis["closed_trades"],
         max_drawdown=analysis["max_drawdown"],
-        history=analysis["history"]
+        history=analysis["history"],
     )

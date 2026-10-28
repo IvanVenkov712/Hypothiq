@@ -18,6 +18,8 @@ scope; creation and sharing are not yet implemented.
 - Single-ticker historical downloads through `yfinance` and pandas data feeds.
 - Backtrader execution with initial cash, commission, and slippage settings.
 - Summary returns, Sharpe ratio, closed trades, and maximum drawdown.
+- Typed per-bar close, cash, equity, and drawdown history through the API,
+  including indicator warm-up bars.
 - React catalogue with search, expandable parameter details, loading and empty
   states, and retry after a failed request.
 - Home page and shared navigation to the catalogue and backtesting workspace.
@@ -33,7 +35,7 @@ The API execution path and browser catalogue are implemented. Remaining work:
 - Strengthen date, interval, parameter, data-quality, and warm-up validation;
   return actionable errors for provider and engine failures.
 - Validate annualization and timeframe handling for supported intervals.
-- Expose equity history and executed trades through the API.
+- Expose executed trades through the API.
 - Display an equity curve and a trade list alongside browser summary metrics.
 - Add a Buy & Hold benchmark where useful.
 - Add frontend and end-to-end coverage for the complete workflow, and expand

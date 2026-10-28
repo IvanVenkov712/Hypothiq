@@ -24,6 +24,8 @@ with no live trading integration.
   commissions, and percentage or fixed slippage.
 - Receive starting and ending cash, ending portfolio value, total return,
   annualized return, Sharpe ratio, closed-trade count, and maximum drawdown.
+- Receive typed per-bar close, cash, equity, and drawdown history through the API,
+  including indicator warm-up bars.
 - Run backend tests without contacting Yahoo Finance.
 
 The seven registered strategies are `BuyAndHold`, `MACrossOver`,
@@ -107,7 +109,7 @@ the component diagram, request flows, and current limitations.
 ## Plans and next features
 
 The immediate goal is to complete the single-asset MVP:
-strengthen input and market-data validation, return equity and trade histories,
+strengthen input and market-data validation, return executed-trade histories,
 and display results with charts and a benchmark. Later phases cover strategy
 comparison, multi-asset portfolios, accounts and strategy sharing, and AI-assisted
 strategy generation. See the [roadmap](docs/roadmap.md) for completed work and

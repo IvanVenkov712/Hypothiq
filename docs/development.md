@@ -32,7 +32,9 @@ From `backend`:
 
 Tests cover file readers, name/parameter resolution, catalogue metadata and its
 HTTP response, broker settings and metric mapping, missing downloads, and RSI
-behavior on flat or one-directional prices. Market-data downloads are mocked;
+behavior on flat or one-directional prices. History tests cover close prices,
+equity and drawdown through gains and losses, execution costs, warm-up bars,
+and single-bar/no-trade runs. Market-data downloads are mocked;
 tests do not need Yahoo access. Dedicated tests do not yet cover every strategy.
 
 From `frontend`:

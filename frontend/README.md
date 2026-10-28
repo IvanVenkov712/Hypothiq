@@ -13,7 +13,11 @@ The backtesting form uses live parameter metadata and accepts a ticker, date
 range (exclusive end), initial cash, fixed or percentage sizing, commission,
 and percentage or fixed slippage. It submits daily-bar backtests and displays
 summary metrics, loading feedback, and API errors. Percentage inputs use human
-units: `0.1` means 0.1%. Equity curves and trade histories are planned.
+units: `0.1` means 0.1%. The typed backtest response also includes per-bar
+`time`, `close`, `cash`, `equity`, and `drawdown` history, ready for charts;
+the UI currently displays summary metrics. Equity charts and executed-trade
+histories are planned. See the [history contract](../docs/api.md#run-a-backtest)
+for timestamp handling, snapshot timing, and units.
 
 Parameter labels explain their role and units. Moving-average dropdowns display
 SMA, EMA, and Wilder's smoothing with explanations, while submitting the API's

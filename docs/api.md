@@ -82,7 +82,7 @@ Strategy and sizer parameters use their declared names. Starting cash must be
 positive. If both percentage and fixed slippage are supplied, percentage
 slippage takes precedence. See `/docs` for the complete request schema.
 
-The response contains only aggregate metrics:
+The response contains summary metrics and a typed `history` array:
 
 | Field | Meaning and units |
 | --- | --- |
@@ -94,10 +94,49 @@ The response contains only aggregate metrics:
 | `sharpe` | Annualized Sharpe ratio using daily analysis and zero risk-free rate; `null` when undefined. |
 | `closed_trades` | Number of closed trades; currently serialized as a number from a float-typed field. |
 | `max_drawdown` | Maximum portfolio drawdown percentage. |
+| `history` | One end-of-bar snapshot per processed bar, including indicator warm-up bars, in feed order. |
 
-There is no forced final liquidation, trade list, equity series, saved result,
-or progress identifier in this response. Annualization for non-daily intervals
-has not been validated; see [architecture assumptions](architecture.md#execution-and-data-assumptions).
+Each history point has these required fields. All numeric history values must
+be finite; missing values, `NaN`, and infinities are not valid chart points.
+
+| Field | Meaning and units |
+| --- | --- |
+| `time` | ISO 8601 datetime without a timezone, taken from the feed's bar label; for daily bars, for example, `2024-01-04T00:00:00`. |
+| `close` | Instrument closing price from the same feed used by the engine, in price units. |
+| `cash` | Uninvested broker cash after executions and costs processed for this bar. |
+| `equity` | Total portfolio value, including open positions marked at this bar's close. |
+| `drawdown` | Nonnegative percentage below the running peak equity: `100 * (peak - equity) / peak`. `5` means a 5% drawdown, and a new peak gives `0`. |
+
+For example, after buying two units at 100 with no costs, a close at 90 can
+produce this point for a portfolio that started with 1,000:
+
+```json
+{
+  "time": "2024-01-04T00:00:00",
+  "close": 90.0,
+  "cash": 800.0,
+  "equity": 980.0,
+  "drawdown": 2.0
+}
+```
+
+Snapshots represent end-of-bar account values. A market order submitted by a
+strategy normally fills on the next bar, so its cash and equity effects appear
+on that execution bar. Close prices inherit the download's adjustment policy;
+they are not a separate raw-price series.
+
+For daily charts, use the date portion of `time` as the trading-date label.
+These labels are not local wall-clock instants and must not be shifted through
+browser timezone conversion. History contains only processed feed bars, with
+no synthetic points for weekends, missing sessions, or the requested start
+date. `start_cash` is the separate initial baseline; the first history point
+is the first processed bar, including when the strategy is still warming up.
+
+The final point's `cash` and `equity` match `end_cash` and `end_value`;
+the largest history drawdown matches `max_drawdown`. There is no forced final
+liquidation, executed-trade list, saved result, or progress identifier.
+Annualization for non-daily intervals has not been validated; see
+[architecture assumptions](architecture.md#execution-and-data-assumptions).
 
 ## Errors and current validation limits
 
