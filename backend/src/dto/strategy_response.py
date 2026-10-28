@@ -11,7 +11,7 @@ class ParameterChoice(BaseModel):
 
 
 class ParameterDefinition(BaseModel):
-    """Form metadata whose suggestions and bounds do not add execution rules."""
+    """Parameter types/bounds enforced on execution; choices are suggestions."""
 
     name: str
     label: str

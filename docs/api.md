@@ -54,7 +54,8 @@ includes this option:
 Options also include exponential (EMA) and Wilder's smoothed (SMMA) averages.
 `default` remains an executable value, so an existing configuration can select
 its matching option without converting a display label back into an identifier.
-Bounds describe strategy constraints and do not add API validation.
+The execution API enforces parameter types and bounds. Choices remain suggested
+options rather than an exhaustive list of indicator aliases.
 
 ## Run a backtest
 
@@ -78,9 +79,42 @@ uses one ticker and requires `strategy` and `data_request`. Omitted broker and
 sizer fields use 10,000 starting cash, zero commission, no configured slippage,
 and Backtrader's `FixedSize` sizer (default stake: one unit).
 
-Strategy and sizer parameters use their declared names. Starting cash must be
-positive. If both percentage and fixed slippage are supplied, percentage
-slippage takes precedence. See `/docs` for the complete request schema.
+Only daily bars (`interval: "1d"`) are supported. `start` and `end` must be
+timezone-free midnight datetimes, with `start < end`; the end is exclusive.
+Supply one ticker of at most 30 characters, without whitespace or commas.
+
+Strategy and sizer parameters use their declared names. Scalar parameter types
+are strict: numeric strings and booleans are not accepted as numbers, and
+integer parameters require integers. Numeric inputs must be finite. Strategy
+lookback periods must be positive integers; the catalogue publishes their
+minimums and other enforced bounds. Named indicator aliases remain supported.
+
+Starting cash, commission multipliers, leverage, and supplied margin must be
+positive. Commission, interest, and slippage must be nonnegative. Percentage
+slippage is a fraction in `[0, 1]`; percentage commission is in `[0, 1]` when
+`percabs` is true, or `[0, 100]` otherwise. Fixed commission amounts can exceed
+one. `commtype` accepts Backtrader's `0` (percentage), `1` (fixed), or `null`
+(infer from margin). `automargin` retains Backtrader's boolean or finite numeric
+semantics, including negative values. If both slippage modes are supplied,
+percentage slippage takes precedence.
+
+Fixed sizers require a nonnegative integer stake and positive integer tranches;
+percentage sizers accept `[0, 100]` and a boolean `retint`. Zero sizing is
+allowed for no-trade runs. See `/docs` for the complete request schema.
+
+The downloader relies on yfinance's DataFrame schema, column names, numeric
+types, and daily timestamp formatting. It checks source-data values: OHLCV must
+be finite and non-missing, prices positive, volume nonnegative, and High/Low
+must enclose Open/Close. Unusable bars are rejected without repairing values or
+filling gaps. Missing sessions and zero volume are allowed. Only bars in
+`[start, end)` are processed.
+
+The selected strategy must have enough downloaded bars to finish warm-up.
+Backtrader computes the indicator requirement; `BollingerBreakout` additionally
+needs its prior band-width lookback. Insufficient-data errors report the
+required and available bar counts and suggest extending the range or reducing
+lookbacks. Meeting the minimum permits evaluation, but does not guarantee a
+signal or a fill before the end.
 
 The response contains summary metrics and a typed `history` array:
 
@@ -135,19 +169,24 @@ is the first processed bar, including when the strategy is still warming up.
 The final point's `cash` and `equity` match `end_cash` and `end_value`;
 the largest history drawdown matches `max_drawdown`. There is no forced final
 liquidation, executed-trade list, saved result, or progress identifier.
-Annualization for non-daily intervals has not been validated; see
+The feed is explicitly configured as daily with compression one; see
 [architecture assumptions](architecture.md#execution-and-data-assumptions).
 
-## Errors and current validation limits
+## Errors
 
-- **422**: Pydantic request validation failed, such as a missing required field,
-  invalid datetime, or non-positive starting cash.
-- **400**: Execution raised `ValueError`. Examples include an unknown strategy,
-  sizer, indicator, or parameter name; missing/empty data; or a strategy's own
-  parameter validation. The body contains `{"detail":"..."}`.
-- **500**: Other unhandled download, engine, or serialization errors.
+- **422**: Request validation failed, including unsupported intervals, unordered
+  dates, timezone-aware or non-midnight dates, invalid tickers, or invalid broker
+  numbers. `detail` is an array of errors with `type`, `loc`, and `msg`; rejected
+  inputs are not echoed, so even non-finite JSON numbers produce a valid response.
+- **400**: Unknown strategy, sizer, indicator, or parameter; invalid strategy/sizer
+  values; no prices in the requested range; insufficient warm-up bars; or a
+  strategy's own `ValueError`. `detail` is an actionable message string.
+- **502**: The download raised an exception, returned no response, or supplied
+  malformed OHLCV data. `detail` explains the provider problem and suggests retrying.
+- **500**: Unexpected execution failures or invalid result models. `detail` is a
+  generic message; exception details are logged on the server.
 
-The service does not yet provide comprehensive date-order, interval, numeric
-strategy-parameter, or OHLCV validation. Some invalid requests can therefore
-reach the engine and fail as server errors. Errors are not yet a stable set of
-machine-readable application codes.
+Non-422 errors retain the body `{"detail":"..."}`. Some provider failures are
+reported by `yfinance` as empty tables; the 400 message therefore mentions both
+ticker/date checks and possible provider unavailability. There are no automatic
+retries or stable machine-readable application error codes.

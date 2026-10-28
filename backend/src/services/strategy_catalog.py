@@ -68,61 +68,72 @@ _COMMON_PARAMETER_METADATA: dict[str, dict[str, Any]] = {
     "devfactor": {
         "label": "Band width (standard deviations)",
         "type": "number",
+        "exclusive_minimum": 0,
         "description": "Distance from the middle band to each outer band, measured in standard deviations.",
     },
 }
 
 # Only information that cannot be read reliably from declared defaults belongs here.
-# Bounds describe existing strategy validation; they do not add execution rules.
+# The HTTP execution path enforces these types and bounds before loading prices.
 _PARAMETER_METADATA: dict[str, dict[str, dict[str, Any]]] = {
     "MACrossOver": {
         "fast": {
+            "minimum": 1,
             "label": "Fast moving average period (bars)",
             "description": "Number of bars used by the faster moving average.",
         },
         "slow": {
+            "minimum": 1,
             "label": "Slow moving average period (bars)",
             "description": "Number of bars used by the slower moving average.",
         },
     },
     "MeanReversion": {
         "period": {
+            "minimum": 1,
             "label": "Moving average period (bars)",
             "description": "Number of bars used to calculate the reference moving average.",
         },
         "multiplier": {
+            "exclusive_minimum": 0,
             "label": "Entry price multiplier",
             "description": "Buy when the close is below this multiple of the moving average. For example, 0.95 means 5% below it.",
         },
     },
     "DonchianBreakout": {
         "entry_period": {
+            "minimum": 1,
             "label": "Entry channel lookback (bars)",
             "description": "Buy above the highest high of these prior bars; the current bar is excluded.",
         },
         "exit_period": {
+            "minimum": 1,
             "label": "Exit channel lookback (bars)",
             "description": "Close below the lowest low of these prior bars; the current bar is excluded.",
         },
     },
     "SimpleBollingerBandsBreakout": {
         "period": {
+            "minimum": 1,
             "label": "Bollinger band period (bars)",
             "description": "Number of bars used to calculate the middle band and price standard deviation.",
         },
     },
     "RSIStrategy": {
         "lower": {
+            "minimum": 0, "maximum": 100,
             "label": "RSI buy threshold",
             "type": "number",
             "description": "Buy when the RSI falls below this value on its 0 to 100 scale.",
         },
         "upper": {
+            "minimum": 0, "maximum": 100,
             "label": "RSI exit threshold",
             "type": "number",
             "description": "Close the position when the RSI rises above this value on its 0 to 100 scale.",
         },
         "period": {
+            "minimum": 1,
             "label": "RSI lookback period (bars)",
             "description": "Number of bars used to smooth gains and losses when calculating RSI.",
         },
@@ -201,53 +212,58 @@ def get_strategy_catalog() -> list[StrategyDefinition]:
     Choices are suggested form options, not an exhaustive list of accepted aliases.
     Unknown default types need an explicit type in the parameter metadata.
     """
-    strategies = []
-    for strategy in registered_strategies():
-        metadata = _PARAMETER_METADATA.get(strategy.__name__, {})
-        parameters = []
-        for name, default in resolve_params(strategy).items():
-            definition: dict[str, Any] = {
-                "name": name,
-                "label": name.replace("_", " ").capitalize(),
-                "default": default,
-                "nullable": default is None,
-            }
-            if isinstance(default, type) and issubclass(default, bt.Indicator):
-                definition.update(type="string", default=default.__name__)
-                if name == "movav":
-                    choices = [
-                        {
-                            "value": default.__name__ if issubclass(default, indicator) else indicator.__name__,
-                            "label": label,
-                            "description": description,
-                        }
-                        for indicator, label, description in _MOVING_AVERAGES
-                    ]
-                    if not any(choice["value"] == default.__name__ for choice in choices):
-                        choices.insert(0, {
-                            "value": default.__name__,
-                            "label": re.sub(r"(?<=[a-z])(?=[A-Z])", " ", default.__name__),
-                        })
-                    definition["choices"] = choices
-            elif isinstance(default, bool):
-                definition["type"] = "boolean"
-            elif isinstance(default, int):
-                definition["type"] = "integer"
-            elif isinstance(default, float):
-                definition["type"] = "number"
-            elif isinstance(default, str):
-                definition["type"] = "string"
-            definition.update(_COMMON_PARAMETER_METADATA.get(name, {}))
-            definition.update(metadata.get(name, {}))
-            if "type" not in definition:
-                raise ValueError(
-                    f"{strategy.__name__}.{name} needs explicit parameter type metadata"
-                )
-            parameters.append(ParameterDefinition(**definition))
-        strategies.append(StrategyDefinition(
+    return [
+        StrategyDefinition(
             class_name=strategy.__name__,
             name=_DISPLAY_NAMES.get(strategy.__name__, strategy.__name__),
             description=_DESCRIPTIONS.get(strategy.__name__, strategy.__doc__ or ""),
-            parameters=parameters,
-        ))
-    return strategies
+            parameters=get_strategy_parameters(strategy),
+        )
+        for strategy in registered_strategies()
+    ]
+
+
+def get_strategy_parameters(strategy: type[bt.Strategy]) -> list[ParameterDefinition]:
+    """Read one strategy's parameter contract without constructing the whole catalogue."""
+    metadata = _PARAMETER_METADATA.get(strategy.__name__, {})
+    parameters = []
+    for name, default in resolve_params(strategy).items():
+        definition: dict[str, Any] = {
+            "name": name,
+            "label": name.replace("_", " ").capitalize(),
+            "default": default,
+            "nullable": default is None,
+        }
+        if isinstance(default, type) and issubclass(default, bt.Indicator):
+            definition.update(type="string", default=default.__name__)
+            if name == "movav":
+                choices = [
+                    {
+                        "value": default.__name__ if issubclass(default, indicator) else indicator.__name__,
+                        "label": label,
+                        "description": description,
+                    }
+                    for indicator, label, description in _MOVING_AVERAGES
+                ]
+                if not any(choice["value"] == default.__name__ for choice in choices):
+                    choices.insert(0, {
+                        "value": default.__name__,
+                        "label": re.sub(r"(?<=[a-z])(?=[A-Z])", " ", default.__name__),
+                    })
+                definition["choices"] = choices
+        elif isinstance(default, bool):
+            definition["type"] = "boolean"
+        elif isinstance(default, int):
+            definition["type"] = "integer"
+        elif isinstance(default, float):
+            definition["type"] = "number"
+        elif isinstance(default, str):
+            definition["type"] = "string"
+        definition.update(_COMMON_PARAMETER_METADATA.get(name, {}))
+        definition.update(metadata.get(name, {}))
+        if "type" not in definition:
+            raise ValueError(
+                f"{strategy.__name__}.{name} needs explicit parameter type metadata"
+            )
+        parameters.append(ParameterDefinition(**definition))
+    return parameters
