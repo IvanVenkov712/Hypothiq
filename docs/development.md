@@ -36,6 +36,9 @@ behavior on flat or one-directional prices. History tests cover close prices,
 equity and drawdown through gains and losses, execution costs, warm-up bars,
 and single-bar/no-trade runs. Market-data downloads are mocked;
 tests do not need Yahoo access. Dedicated tests do not yet cover every strategy.
+Validation tests exercise the HTTP boundary with invalid dates/intervals, broker
+and strategy/sizer numbers, unusable price values, inconsistent bars, and exact
+indicator warm-up limits, including nested moving averages and the squeeze lookback.
 
 From `frontend`:
 
@@ -49,6 +52,8 @@ Lint uses Oxlint. The build runs TypeScript checks followed by Vite bundling.
 Playwright browser tests start Vite, mock API responses, and verify equity and
 drawdown charts with keyboard/pointer/touch input, unchanged daily labels,
 flat/single-bar/empty histories, negative equity, large drawdown, and reruns.
+Error tests cover actionable warm-up/provider messages, field-level validation
+responses, invalid date ordering, and successful retry after a failure.
 Windows tests use installed Edge; on macOS/Linux first run
 `npx playwright install chromium`. No backend or price downloads are needed.
 See the [frontend guide](../frontend/README.md) for screenshots and test setup.
@@ -73,8 +78,8 @@ Check invalid date order and retry after a failed run. An API test run can also 
    from the class rather than duplicated in metadata.
 4. Supply `_PARAMETER_METADATA` when a type cannot be inferred, for example for a
    `None` default, or when bounds, labels, or numeric type overrides are needed.
-   Enforce actual domain constraints in the strategy; catalogue bounds do not
-   enforce them during execution.
+   The backtest service enforces catalogue scalar types and bounds before
+   downloading prices. Enforce additional domain constraints in the strategy.
 5. Test signal and order behavior with small deterministic data and verify that
    catalogue defaults round-trip through the registry. Avoid live price downloads
    in automated tests.

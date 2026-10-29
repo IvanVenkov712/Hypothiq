@@ -16,6 +16,10 @@ scope; creation and sharing are not yet implemented.
   named Backtrader indicator parameters.
 - Typed catalogue metadata derived from strategy declarations.
 - Single-ticker historical downloads through `yfinance` and pandas data feeds.
+- Daily-only request validation for tickers, ordered date boundaries, finite
+  broker inputs, strategy parameter types/bounds, and sizing.
+- OHLCV validation and warm-up checks using actual downloaded bars, with
+  actionable request/provider errors and JSON responses for unexpected failures.
 - Backtrader execution with initial cash, commission, and slippage settings.
 - Summary returns, Sharpe ratio, closed trades, and maximum drawdown.
 - Typed per-bar close, cash, equity, and drawdown history through the API,
@@ -31,14 +35,13 @@ scope; creation and sharing are not yet implemented.
   narrow touchscreen layouts.
 - Backend tests for registry/catalogue contracts, broker execution settings,
   data loading, result mapping, file readers, and RSI edge cases.
+- HTTP regression tests for invalid requests, provider failures, malformed
+  OHLCV, and exact warm-up boundaries; browser tests for error display and retry.
 
 ## Phase 1: complete the single-asset MVP
 
 The API execution path and browser catalogue are implemented. Remaining work:
 
-- Strengthen date, interval, parameter, data-quality, and warm-up validation;
-  return actionable errors for provider and engine failures.
-- Validate annualization and timeframe handling for supported intervals.
 - Expose executed trades through the API.
 - Display an executed-trade list alongside browser metrics and charts.
 - Add a Buy & Hold benchmark where useful.

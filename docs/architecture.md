@@ -54,9 +54,12 @@ during local development.
 | `backend/src/main.py` | FastAPI application, router registration, and health endpoint. |
 | `backend/src/routers/` | HTTP request/response boundaries and service calls. |
 | `backend/src/dto/` | Pydantic request, catalogue, and backtest result models. |
-| `backend/src/registry.py` | Strategy registration, sizer/indicator lookup, and parameter resolution. |
-| `backend/src/strategy_catalog.py` | Display metadata derived from strategy defaults with explicit overrides. |
-| `backend/src/services/backtest_service.py` | Price acquisition, engine setup, execution, and result mapping. |
+| `backend/src/services/registry.py` | Strategy registration, sizer/indicator lookup, and parameter resolution. |
+| `backend/src/services/strategy_catalog.py` | Display metadata and execution parameter bounds derived from strategy defaults with explicit overrides. |
+| `backend/src/services/backtest_service.py` | Coordinate parameter checks, feed loading, engine setup, execution, and result mapping. |
+| `backend/src/services/parameter_validation.py` | Enforce catalogue types/bounds and Backtrader sizing constraints on resolved parameters. |
+| `backend/src/services/market_data.py` | Download and validate daily OHLCV, translate provider failures, and construct feeds. |
+| `backend/src/analyzers/warmup_validation.py` | Check actual downloaded bars against indicator and strategy warm-up requirements before evaluation. |
 | `backend/src/precoded_strategies/single_asset/` | Predefined Backtrader strategies. |
 | `backend/data/` | Sample CSVs; the HTTP backtest flow uses Yahoo downloads instead. |
 | `backend/test/` | Tests with mocked downloads and small real Backtrader runs. |
@@ -74,9 +77,9 @@ during local development.
    sorts by display name, and renders the returned definitions.
 
 `class_name` is the execution identifier; `name` is the display label. Catalogue
-choices are suggestions and bounds are descriptive metadata. They do not add
-execution validation rules. Strategies remain responsible for their own domain
-constraints.
+choices are suggestions. The service enforces catalogue scalar types and bounds
+before downloading data. Strategies can enforce additional domain constraints;
+the registry remains responsible for name and class resolution.
 
 ## Backtest flow
 
@@ -85,22 +88,36 @@ and date order, and posts to `/api/backtests/run-backtest`. Human percentage
 inputs are converted to fractions for commission and percentage slippage;
 `PercentSizer` uses percentage units directly. Browser runs use daily bars.
 
-1. FastAPI validates the body as a `BacktestRequest`. Starting cash must be positive.
+1. FastAPI validates the body as a `BacktestRequest`: one ticker, daily interval,
+   timezone-free midnight dates in ascending order, and finite broker numbers
+   within their declared bounds.
 2. The service resolves the strategy, sizer, and parameter names before requesting
    prices. Unknown names raise `ValueError`. Class-valued indicator parameters
    resolve through the corresponding Backtrader namespace; ordinary values pass
-   through without range validation by the resolver.
-3. `yfinance` downloads one ticker's OHLCV data. Missing or empty downloads raise
-   `ValueError`; a pandas-backed feed carries the requested date window.
+   through without range validation by the resolver. Validation reads only the
+   selected strategy's parameter definitions to check scalar types and bounds,
+   then checks sizing. It does not build the complete catalogue for each run.
+3. `yfinance` downloads one ticker's OHLCV data. The service relies on the library
+   for its table schema, numeric types, and daily timestamps. It rejects missing,
+   non-finite, or nonpositive prices, negative volume, and inconsistent High/Low
+   ranges without repairing them. Empty downloads raise `ValueError`; provider
+   failures and unusable bars raise `MarketDataError`. Only bars inside the
+   exclusive-end window enter the feed.
 4. A fresh `Cerebro` receives the feed, strategy, sizer, cash, commission, and
    slippage settings. Percentage slippage takes precedence if both modes are supplied.
-5. Backtrader runs the strategy with Returns, SharpeRatio, TradeAnalyzer, and
+5. After feed preloading and indicator setup, a warm-up analyzer checks the
+   actual available bar count against Backtrader's computed minimum period.
+   `BollingerBreakout` also requires its prior band-width lookback. Short runs
+   fail with required/available counts before indicator evaluation. Backtrader
+   runs the strategy with Returns, SharpeRatio, TradeAnalyzer, and
    DrawDown analyzers. The result analyzer captures end-of-bar close, cash,
    equity, and drawdown, including indicator warm-up bars. The service returns
    summary metrics and typed history points in `BacktestResponse`; see the
    [history contract](api.md#run-a-backtest) for timing, timestamps, and units.
-6. The router maps `ValueError` to HTTP 400. Other unhandled failures propagate as
-   server errors. See the [API reference](api.md) for response semantics.
+6. The router maps request/strategy `ValueError` to HTTP 400, provider errors to
+   502, and unexpected execution or result-validation failures to JSON 500 errors
+   with server-side logging. HTTP body validation returns field-level 422 errors
+   without echoing inputs. See the [API reference](api.md) for response semantics.
 
 The route uses a synchronous function, so FastAPI executes it in its thread pool.
 The request waits for the download and backtest; there is no queue, progress
@@ -122,12 +139,12 @@ constructs its own engine and does not mutate the submitted request.
 - Yahoo's download end date is exclusive. Download defaults are inherited from
   `yfinance`; the service does not explicitly set an adjustment policy or cache
   data. Repeat runs are not guaranteed to use an identical dataset.
-- Feed construction does not set timeframe/compression from the requested
-  interval. Sharpe analysis explicitly uses daily periods; annualized metrics
-  for other intervals need further validation.
-- Validation covers DTO types, positive cash, name resolution, missing data, and
-  constraints implemented by individual strategies. There is no complete shared
-  validation of date ordering, provider intervals, OHLCV quality, or warm-up length.
+- The API only accepts daily bars. Feed construction explicitly sets daily
+  timeframe and compression one; Sharpe analysis uses daily periods.
+- Validation checks price values and bar consistency, not whether the provider's
+  prices are accurate or its trading-session history is complete. DataFrame
+  structure and timestamp formatting follow yfinance's output contract.
+  Gaps are retained. Finishing warm-up does not guarantee trades or final fills.
 
 ## Deployment assumptions
 

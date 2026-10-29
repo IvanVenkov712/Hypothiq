@@ -11,7 +11,8 @@ import pytest
 from dto.backtest_request import BacktestRequest, DataRequest
 from dto.backtest_response import BacktestResponse
 from main import app
-from services.backtest_service import get_data, get_data_y_finance, run_backtest_by_request
+from services.backtest_service import run_backtest_by_request
+from services.market_data import MarketDataError, get_data, get_data_y_finance
 
 
 @pytest.fixture
@@ -27,11 +28,11 @@ def data_request():
 def frame():
     return pd.DataFrame(
         {
-            'open': [100, 100, 110, 120],
-            'high': [110, 110, 120, 130],
-            'low': [90, 90, 100, 110],
-            'close': [100, 100, 110, 120],
-            'volume': 100,
+            'Open': [100, 100, 110, 120],
+            'High': [110, 110, 120, 130],
+            'Low': [90, 90, 100, 110],
+            'Close': [100, 100, 110, 120],
+            'Volume': 100,
         },
         index=pd.date_range('2024-01-01', periods=4),
     )
@@ -91,7 +92,7 @@ def test_defaults_and_no_trades_allow_undefined_sharpe(frame, data_request, bars
                 'equity': 10000,
                 'drawdown': 0,
             }
-            for timestamp, close in frame['close'].items()
+            for timestamp, close in frame['Close'].items()
         ],
     )
 
@@ -143,7 +144,7 @@ def test_history_includes_indicator_warmup_bars(frame, data_request):
 
     # The crossover needs four bars; the first three must still reach the chart.
     assert [point.time for point in result.history] == list(frame.index.to_pydatetime())
-    assert [point.close for point in result.history] == list(frame['close'])
+    assert [point.close for point in result.history] == list(frame['Close'])
     assert [point.cash for point in result.history] == [result.start_cash] * len(frame)
     assert [point.equity for point in result.history] == [result.start_cash] * len(frame)
     assert [point.drawdown for point in result.history] == [0] * len(frame)
@@ -174,7 +175,7 @@ def test_backtest_endpoint_returns_typed_history_as_json(frame, data_request):
         'query_string': b'',
         'headers': [(b'content-type', b'application/json')],
     }
-    with patch('services.backtest_service.yf.download', return_value=frame):
+    with patch('services.market_data.yf.download', return_value=frame):
         asyncio.run(app(scope, receive, send))
 
     assert messages[0]['status'] == 200
@@ -185,7 +186,7 @@ def test_backtest_endpoint_returns_typed_history_as_json(frame, data_request):
         {'time': timestamp.isoformat(), 'close': close, 'cash': cash,
          'equity': equity, 'drawdown': 0}
         for timestamp, close, cash, equity in zip(
-            frame.index, frame['close'], [10000, 9900, 9900, 9900],
+            frame.index, frame['Close'], [10000, 9900, 9900, 9900],
             [10000, 10000, 10010, 10020],
         )
     ]
@@ -214,9 +215,8 @@ def test_yfinance_download_uses_requested_symbol_interval_and_dates(frame, data_
     request = data_request.model_copy(update={
         'start': datetime(2024, 1, 2),
         'end': datetime(2024, 1, 3),
-        'interval': '1wk',
     })
-    with patch('services.backtest_service.yf.download', return_value=frame) as download:
+    with patch('services.market_data.yf.download', return_value=frame) as download:
         feed = get_data_y_finance(request)
 
     download.assert_called_once_with(
@@ -229,17 +229,19 @@ def test_yfinance_download_uses_requested_symbol_interval_and_dates(frame, data_
     cerebro = bt.Cerebro()
     cerebro.adddata(feed)
     cerebro.run()
-    assert len(feed) == 2
-    assert feed.datetime.datetime(0) == request.end
+    assert len(feed) == 1
+    assert feed.datetime.datetime(0) == request.start
+    assert feed._timeframe == bt.TimeFrame.Days
+    assert feed._compression == 1
 
 
-@pytest.mark.parametrize('downloaded, message', [
-    (None, 'An error occurred during yfinance data download'),
-    (pd.DataFrame(), 'There are no records'),
+@pytest.mark.parametrize('downloaded, error, message', [
+    (None, MarketDataError, 'provider returned no response'),
+    (pd.DataFrame(), ValueError, 'No daily prices were returned'),
 ])
-def test_yfinance_rejects_missing_data(data_request, downloaded, message):
-    with patch('services.backtest_service.yf.download', return_value=downloaded):
-        with pytest.raises(ValueError, match=message):
+def test_yfinance_rejects_missing_data(data_request, downloaded, error, message):
+    with patch('services.market_data.yf.download', return_value=downloaded):
+        with pytest.raises(error, match=message):
             get_data_y_finance(data_request)
 
 
@@ -248,7 +250,7 @@ def test_data_path_is_independent_of_working_directory(frame, tmp_path, monkeypa
     csv_frame = frame.rename_axis('date').reset_index()
     start = datetime(2024, 1, 2)
     end = datetime(2024, 1, 3)
-    with patch('services.backtest_service.pd.read_csv', return_value=csv_frame) as read:
+    with patch('services.market_data.pd.read_csv', return_value=csv_frame) as read:
         feed = get_data(start, end)
 
     read.assert_called_once_with(Path(__file__).resolve().parents[1] / 'data' / 'AAPL.csv')

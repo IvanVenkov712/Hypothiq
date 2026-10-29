@@ -20,6 +20,8 @@ focuses on research, with no live trading integration.
   backtest at `/backtesting`, including strategy parameters and execution costs.
 - Run a single-asset backtest through FastAPI using historical OHLCV data
   downloaded with `yfinance`.
+- Validate daily requests, strategy/sizing parameters, market-data quality, and
+  available warm-up bars, with actionable validation and provider errors.
 - Choose a registered strategy and Backtrader position sizer; apply initial cash,
   commissions, and percentage or fixed slippage.
 - Receive starting and ending cash, ending portfolio value, total return,
@@ -111,8 +113,8 @@ the component diagram, request flows, and current limitations.
 ## Plans and next features
 
 The immediate goal is to complete the single-asset MVP:
-strengthen input and market-data validation, return executed-trade histories,
-and display results with charts and a benchmark. Later phases cover strategy
+return executed-trade histories and add a trade list and benchmark alongside
+the existing charts. Later phases cover strategy
 comparison, multi-asset portfolios, accounts and strategy sharing, and AI-assisted
 strategy generation. See the [roadmap](docs/roadmap.md) for completed work and
 completion criteria.
