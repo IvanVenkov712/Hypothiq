@@ -46,8 +46,9 @@ class SimpleBollingerBandsBreakout(bt.Strategy):
         )
 
     def next(self):
-        if self.data.close[0] > self.bands.top[0]:
-            self.buy()
+        if not self.position:
+            if self.data.close[0] > self.bands.top[0]:
+                self.buy()
 
         elif self.data.close[0] < self.bands.bot[0]:
-            self.sell()
+            self.close()
