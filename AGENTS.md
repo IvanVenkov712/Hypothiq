@@ -2,7 +2,10 @@
 
 ## Project description
 
-Hypothiq is focused on trading strategies research and comparison.
+Hypothiq is a platform for backtesting, comparing, sharing and reviewing algorithmic trading strategies.
+It's important that I'm not building an enterprice big system.
+So you should avoid introducing unnecessary complexity. 
+Also don'd be too strict about plans or requirements. They can be altered or completely removed.
 
 
 ## Development workflow
